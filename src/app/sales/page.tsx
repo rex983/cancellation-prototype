@@ -1,8 +1,14 @@
 import { OrderTable } from "@/components/order-table";
+import { AccessDenied } from "@/components/access-denied";
 import { listOrders } from "@/lib/store";
 import { PRE_STM_STATUSES } from "@/lib/types";
+import { canSeeSales } from "@/lib/roles";
+import { getRole } from "@/lib/roles.server";
 
-export default function SalesPage() {
+export default async function SalesPage() {
+  const role = await getRole();
+  if (!canSeeSales(role)) return <AccessDenied role={role} />;
+
   const orders = listOrders().filter((o) => PRE_STM_STATUSES.includes(o.status));
 
   return (

@@ -24,6 +24,12 @@ import {
   formatCurrency,
   formatDate,
 } from "@/lib/format";
+import {
+  ROLE_LABEL,
+  canRequestPost,
+  canRequestPre,
+} from "@/lib/roles";
+import { getRole } from "@/lib/roles.server";
 
 export default async function OrderPage(props: PageProps<"/orders/[id]">) {
   const { id } = await props.params;
@@ -33,9 +39,12 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
   const order = getOrder(id);
   if (!order) notFound();
 
+  const role = await getRole();
   const existing = getCancellationForOrder(order.id);
   const isPre = PRE_STM_STATUSES.includes(order.status);
   const isPost = POST_STM_STATUSES.includes(order.status);
+  const allowedPre = canRequestPre(role);
+  const allowedPost = canRequestPost(role);
 
   return (
     <div className="space-y-6">
@@ -92,10 +101,21 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
             <CardDescription>No further action available.</CardDescription>
           </CardHeader>
         </Card>
-      ) : isPre ? (
+      ) : isPre && allowedPre ? (
         <PreStmForm order={order} />
-      ) : isPost ? (
+      ) : isPost && allowedPost ? (
         <PostStmForm order={order} />
+      ) : isPre || isPost ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Read-only view</CardTitle>
+            <CardDescription>
+              You&apos;re viewing as <strong>{ROLE_LABEL[role]}</strong>, which can&apos;t
+              request a {isPre ? "pre-STM" : "post-STM"} cancellation. Switch roles via
+              &ldquo;View as&rdquo; to submit.
+            </CardDescription>
+          </CardHeader>
+        </Card>
       ) : (
         <Card>
           <CardHeader>

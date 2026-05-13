@@ -21,9 +21,10 @@ type Props = {
   cancellations: Cancellation[];
   orders: Map<string, Order>;
   empty: string;
+  canDecide?: boolean;
 };
 
-export function CancellationList({ cancellations, orders, empty }: Props) {
+export function CancellationList({ cancellations, orders, empty, canDecide = false }: Props) {
   if (cancellations.length === 0) {
     return (
       <div className="rounded-md border bg-card p-8 text-center text-sm text-muted-foreground">
@@ -97,7 +98,7 @@ export function CancellationList({ cancellations, orders, empty }: Props) {
                   )}
                 </div>
               )}
-              {c.status === "pending_review" && (
+              {canDecide && c.status === "pending_review" && (
                 <div className="flex gap-2 pt-2">
                   <DecisionDialog
                     cancellationId={c.id}
@@ -115,7 +116,7 @@ export function CancellationList({ cancellations, orders, empty }: Props) {
                   />
                 </div>
               )}
-              {c.status === "approved" && (
+              {canDecide && c.status === "approved" && (
                 <div className="flex gap-2 pt-2">
                   <DecisionDialog
                     cancellationId={c.id}

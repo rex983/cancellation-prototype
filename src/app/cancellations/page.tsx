@@ -1,8 +1,14 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CancellationList } from "@/components/cancellation-list";
+import { AccessDenied } from "@/components/access-denied";
 import { listCancellations, listOrders } from "@/lib/store";
+import { canReview } from "@/lib/roles";
+import { getRole } from "@/lib/roles.server";
 
-export default function CancellationsPage() {
+export default async function CancellationsPage() {
+  const role = await getRole();
+  if (!canReview(role)) return <AccessDenied role={role} />;
+
   const all = listCancellations();
   const orders = new Map(listOrders().map((o) => [o.id, o]));
 
@@ -29,6 +35,7 @@ export default function CancellationsPage() {
             cancellations={all}
             orders={orders}
             empty="No cancellation requests yet."
+            canDecide
           />
         </TabsContent>
         <TabsContent value="pre" className="mt-4">
@@ -36,6 +43,7 @@ export default function CancellationsPage() {
             cancellations={preStm}
             orders={orders}
             empty="No pre-STM cancellation requests yet."
+            canDecide
           />
         </TabsContent>
         <TabsContent value="post" className="mt-4">
@@ -43,6 +51,7 @@ export default function CancellationsPage() {
             cancellations={postStm}
             orders={orders}
             empty="No post-STM cancellation requests yet."
+            canDecide
           />
         </TabsContent>
       </Tabs>

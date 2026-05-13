@@ -1,8 +1,14 @@
 import { OrderTable } from "@/components/order-table";
+import { AccessDenied } from "@/components/access-denied";
 import { listOrders } from "@/lib/store";
 import { POST_STM_STATUSES } from "@/lib/types";
+import { canSeeBst } from "@/lib/roles";
+import { getRole } from "@/lib/roles.server";
 
-export default function BstPage() {
+export default async function BstPage() {
+  const role = await getRole();
+  if (!canSeeBst(role)) return <AccessDenied role={role} />;
+
   const orders = listOrders().filter((o) => POST_STM_STATUSES.includes(o.status));
 
   return (

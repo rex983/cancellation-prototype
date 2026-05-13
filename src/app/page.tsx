@@ -2,8 +2,16 @@ import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { listCancellations, listOrders } from "@/lib/store";
 import { PRE_STM_STATUSES, POST_STM_STATUSES } from "@/lib/types";
+import {
+  ROLE_LABEL,
+  canReview,
+  canSeeBst,
+  canSeeSales,
+} from "@/lib/roles";
+import { getRole } from "@/lib/roles.server";
 
-export default function Home() {
+export default async function Home() {
+  const role = await getRole();
   const orders = listOrders();
   const cancellations = listCancellations();
 
@@ -21,53 +29,62 @@ export default function Home() {
           BST team handles cancellations <em>after</em> STM, where manufacturer fees and
           restocking apply.
         </p>
+        <p className="text-sm text-muted-foreground mt-3">
+          Viewing as <strong>{ROLE_LABEL[role]}</strong>.
+        </p>
       </section>
 
       <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/sales">
-          <Card className="h-full hover:border-primary transition">
-            <CardHeader>
-              <CardTitle>Sales — Pre-STM</CardTitle>
-              <CardDescription>
-                Cancel orders that have not yet been sent to the manufacturer. Full
-                deposit refund.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-semibold">{preCount}</div>
-              <div className="text-sm text-muted-foreground">eligible orders</div>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/bst">
-          <Card className="h-full hover:border-primary transition">
-            <CardHeader>
-              <CardTitle>BST — Post-STM</CardTitle>
-              <CardDescription>
-                Cancel orders already with manufacturer. Subject to manufacturer cancellation
-                fees and restocking.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-semibold">{postCount}</div>
-              <div className="text-sm text-muted-foreground">eligible orders</div>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href="/cancellations">
-          <Card className="h-full hover:border-primary transition">
-            <CardHeader>
-              <CardTitle>Review Queue</CardTitle>
-              <CardDescription>
-                All cancellation requests across both flows. Approve, deny, or mark complete.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-semibold">{pendingReview}</div>
-              <div className="text-sm text-muted-foreground">awaiting review</div>
-            </CardContent>
-          </Card>
-        </Link>
+        {canSeeSales(role) && (
+          <Link href="/sales">
+            <Card className="h-full hover:border-primary transition">
+              <CardHeader>
+                <CardTitle>Sales — Pre-STM</CardTitle>
+                <CardDescription>
+                  Cancel orders that have not yet been sent to the manufacturer. Full
+                  deposit refund.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-semibold">{preCount}</div>
+                <div className="text-sm text-muted-foreground">eligible orders</div>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
+        {canSeeBst(role) && (
+          <Link href="/bst">
+            <Card className="h-full hover:border-primary transition">
+              <CardHeader>
+                <CardTitle>BST — Post-STM</CardTitle>
+                <CardDescription>
+                  Cancel orders already with manufacturer. Subject to manufacturer cancellation
+                  fees and restocking.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-semibold">{postCount}</div>
+                <div className="text-sm text-muted-foreground">eligible orders</div>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
+        {canReview(role) && (
+          <Link href="/cancellations">
+            <Card className="h-full hover:border-primary transition">
+              <CardHeader>
+                <CardTitle>Review Queue</CardTitle>
+                <CardDescription>
+                  All cancellation requests across both flows. Approve, deny, or mark complete.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-semibold">{pendingReview}</div>
+                <div className="text-sm text-muted-foreground">awaiting review</div>
+              </CardContent>
+            </Card>
+          </Link>
+        )}
       </section>
 
       <section>

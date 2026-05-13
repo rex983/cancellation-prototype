@@ -1,5 +1,6 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
@@ -15,6 +16,26 @@ import {
   POST_STM_STATUSES,
   type CancellationType,
 } from "@/lib/types";
+import {
+  ROLES,
+  ROLE_COOKIE,
+  canRequestPost,
+  canRequestPre,
+  canReview,
+  type Role,
+} from "@/lib/roles";
+import { getRole } from "@/lib/roles.server";
+
+export async function setRole(role: Role) {
+  if (!(ROLES as string[]).includes(role)) return;
+  const store = await cookies();
+  store.set(ROLE_COOKIE, role, {
+    path: "/",
+    sameSite: "lax",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+  revalidatePath("/", "layout");
+}
 
 function makeId(prefix: string): string {
   return `${prefix}_${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
@@ -28,6 +49,14 @@ export async function submitCancellation(formData: FormData) {
   const requestedBy = String(formData.get("requestedBy") ?? "");
   const manufacturerFee = Number(formData.get("manufacturerFee") ?? 0);
   const restockingFee = Number(formData.get("restockingFee") ?? 0);
+
+  const role = await getRole();
+  if (type === "pre_stm" && !canRequestPre(role)) {
+    throw new Error("Your role can't submit a pre-STM cancellation");
+  }
+  if (type === "post_stm" && !canRequestPost(role)) {
+    throw new Error("Your role can't submit a post-STM cancellation");
+  }
 
   const order = getOrder(orderId);
   if (!order) throw new Error("Order not found");
@@ -80,6 +109,11 @@ export async function decideCancellation(formData: FormData) {
   const decision = String(formData.get("decision") ?? "");
   const decisionNotes = String(formData.get("decisionNotes") ?? "");
   const decidedBy = String(formData.get("decidedBy") ?? "Reviewer");
+
+  const role = await getRole();
+  if (!canReview(role)) {
+    throw new Error("Your role can't review cancellations");
+  }
 
   const cancellations = listCancellations();
   const target = cancellations.find((c) => c.id === id);
