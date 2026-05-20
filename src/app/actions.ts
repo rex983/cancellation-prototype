@@ -47,8 +47,6 @@ export async function submitCancellation(formData: FormData) {
   const reason = String(formData.get("reason") ?? "");
   const notes = String(formData.get("notes") ?? "");
   const requestedBy = String(formData.get("requestedBy") ?? "");
-  const manufacturerFee = Number(formData.get("manufacturerFee") ?? 0);
-  const restockingFee = Number(formData.get("restockingFee") ?? 0);
 
   const role = await getRole();
   if (type === "pre_stm" && !canRequestPre(role)) {
@@ -74,14 +72,6 @@ export async function submitCancellation(formData: FormData) {
     throw new Error("Order is not post-STM");
   }
 
-  let refundAmount = order.depositPaid;
-  if (type === "post_stm") {
-    refundAmount = Math.max(
-      0,
-      order.depositPaid - (manufacturerFee || 0) - (restockingFee || 0),
-    );
-  }
-
   const id = makeId("cnc");
   createCancellation({
     id,
@@ -92,9 +82,7 @@ export async function submitCancellation(formData: FormData) {
     notes,
     requestedBy: requestedBy || (type === "pre_stm" ? "Sales Rep" : "BST Member"),
     requestedAt: new Date().toISOString(),
-    refundAmount,
-    manufacturerFee: type === "post_stm" ? manufacturerFee : undefined,
-    restockingFee: type === "post_stm" ? restockingFee : undefined,
+    refundAmount: order.depositPaid,
   });
 
   revalidatePath("/sales");

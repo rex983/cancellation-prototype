@@ -7,7 +7,7 @@ A working prototype of the order cancellation workflow for Big Buildings Direct.
 | Flow | Owner | Order state | Refund treatment |
 |------|-------|-------------|------------------|
 | **Pre-STM** | Sales reps | Order has not yet been sent to manufacturer (deposit pending/paid, engineering) | Full deposit refund |
-| **Post-STM** | BST team | Order is with the manufacturer (sent to manufacturer, in production, shipped) | Deposit minus manufacturer cancellation fee and restocking |
+| **Post-STM** | BST team | Order is with the manufacturer (sent to manufacturer, in production, shipped) | Full deposit refund |
 
 STM = "Sent To Manufacturer".
 

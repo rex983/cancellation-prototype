@@ -26,8 +26,7 @@ export default async function Home() {
         <p className="text-muted-foreground mt-2 max-w-2xl">
           Prototype for the two cancellation paths at Big Buildings Direct. Sales reps
           handle cancellations <em>before</em> an order is Sent To Manufacturer (STM). The
-          BST team handles cancellations <em>after</em> STM, where manufacturer fees and
-          restocking apply.
+          BST team handles cancellations <em>after</em> STM.
         </p>
         <p className="text-sm text-muted-foreground mt-3">
           Viewing as <strong>{ROLE_LABEL[role]}</strong>.
@@ -58,8 +57,7 @@ export default async function Home() {
               <CardHeader>
                 <CardTitle>BST — Post-STM</CardTitle>
                 <CardDescription>
-                  Cancel orders already with manufacturer. Subject to manufacturer cancellation
-                  fees and restocking.
+                  Cancel orders already with the manufacturer. BST workflow.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -92,8 +90,7 @@ export default async function Home() {
         <ol className="list-decimal pl-6 space-y-2 text-sm text-muted-foreground">
           <li>A sales rep or BST member opens an order from the appropriate queue.</li>
           <li>
-            They submit a cancellation request with a reason and notes. Post-STM
-            requests also capture manufacturer fees and restocking.
+            They submit a cancellation request with a reason and notes.
           </li>
           <li>
             The request lands in the review queue. A manager approves or denies it.

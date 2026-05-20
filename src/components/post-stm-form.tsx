@@ -27,11 +27,7 @@ import type { Order } from "@/lib/types";
 
 export function PostStmForm({ order }: { order: Order }) {
   const [reason, setReason] = useState("");
-  const [mfrFee, setMfrFee] = useState(0);
-  const [restockFee, setRestockFee] = useState(0);
   const [isPending, startTransition] = useTransition();
-
-  const refund = Math.max(0, order.depositPaid - (mfrFee || 0) - (restockFee || 0));
 
   function handleSubmit(formData: FormData) {
     if (!reason) {
@@ -41,8 +37,6 @@ export function PostStmForm({ order }: { order: Order }) {
     formData.set("reason", reason);
     formData.set("type", "post_stm");
     formData.set("orderId", order.id);
-    formData.set("manufacturerFee", String(mfrFee || 0));
-    formData.set("restockingFee", String(restockFee || 0));
     startTransition(async () => {
       try {
         await submitCancellation(formData);
@@ -57,8 +51,8 @@ export function PostStmForm({ order }: { order: Order }) {
       <CardHeader>
         <CardTitle>Request Cancellation (Post-STM)</CardTitle>
         <CardDescription>
-          Order is already with the manufacturer. Capture manufacturer cancellation
-          fee and any restocking before submitting.
+          Order is already with the manufacturer. BST handles the cancellation
+          process from here.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -96,48 +90,16 @@ export function PostStmForm({ order }: { order: Order }) {
               placeholder="Include manufacturer reference numbers, conversations, etc."
             />
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="mfrFee">Manufacturer Fee</Label>
-              <Input
-                id="mfrFee"
-                type="number"
-                inputMode="decimal"
-                min={0}
-                value={mfrFee || ""}
-                onChange={(e) => setMfrFee(Number(e.target.value))}
-                placeholder="0"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="restockFee">Restocking Fee</Label>
-              <Input
-                id="restockFee"
-                type="number"
-                inputMode="decimal"
-                min={0}
-                value={restockFee || ""}
-                onChange={(e) => setRestockFee(Number(e.target.value))}
-                placeholder="0"
-              />
-            </div>
-          </div>
-          <div className="rounded-md border bg-muted/40 p-4 text-sm space-y-1">
+          <div className="rounded-md border bg-muted/40 p-4 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Deposit paid</span>
               <span className="font-medium">{formatCurrency(order.depositPaid)}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Manufacturer fee</span>
-              <span className="font-medium">-{formatCurrency(mfrFee || 0)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Restocking fee</span>
-              <span className="font-medium">-{formatCurrency(restockFee || 0)}</span>
-            </div>
-            <div className="flex justify-between border-t pt-1 mt-2">
-              <span className="font-medium">Refund to customer</span>
-              <span className="font-semibold">{formatCurrency(refund)}</span>
+            <div className="flex justify-between mt-1">
+              <span className="text-muted-foreground">Refund to customer</span>
+              <span className="font-semibold">
+                {formatCurrency(order.depositPaid)}
+              </span>
             </div>
           </div>
           <Button type="submit" disabled={isPending}>

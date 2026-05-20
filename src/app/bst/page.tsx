@@ -16,8 +16,7 @@ export default async function BstPage() {
       <div>
         <h1 className="text-2xl font-bold">BST — Post-STM Cancellations</h1>
         <p className="text-muted-foreground mt-1">
-          Orders already with the manufacturer. Cancellations may incur manufacturer
-          fees and restocking — capture both before submitting.
+          Orders already with the manufacturer. BST handles these cancellations.
         </p>
       </div>
       <OrderTable

@@ -58,8 +58,6 @@ export type Cancellation = {
   requestedBy: string;
   requestedAt: string;
   refundAmount: number;
-  manufacturerFee?: number;
-  restockingFee?: number;
   decidedAt?: string;
   decidedBy?: string;
   decisionNotes?: string;

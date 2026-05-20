@@ -64,18 +64,12 @@ export function CancellationList({ cancellations, orders, empty, canDecide = fal
               </div>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <Field label="Reason" value={c.reason} />
                 <Field
                   label="Refund"
                   value={formatCurrency(c.refundAmount)}
                 />
-                {c.type === "post_stm" && (
-                  <Field
-                    label="Mfr fee / Restock"
-                    value={`${formatCurrency(c.manufacturerFee ?? 0)} / ${formatCurrency(c.restockingFee ?? 0)}`}
-                  />
-                )}
               </div>
               {c.notes && (
                 <div>
