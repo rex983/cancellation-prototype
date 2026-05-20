@@ -1,5 +1,5 @@
 import type { Cancellation, Order, OrderStatus } from "./types";
-import { SEED_ORDERS } from "./seed";
+import { SEED_ORDERS, SEED_CANCELLATIONS } from "./seed";
 
 type StoreShape = {
   orders: Map<string, Order>;
@@ -11,7 +11,9 @@ const globalForStore = globalThis as unknown as { __cancelStore?: StoreShape };
 function init(): StoreShape {
   const orders = new Map<string, Order>();
   for (const o of SEED_ORDERS) orders.set(o.id, { ...o });
-  return { orders, cancellations: new Map() };
+  const cancellations = new Map<string, Cancellation>();
+  for (const c of SEED_CANCELLATIONS) cancellations.set(c.id, { ...c });
+  return { orders, cancellations };
 }
 
 const store: StoreShape = globalForStore.__cancelStore ?? init();
@@ -19,7 +21,7 @@ globalForStore.__cancelStore = store;
 
 export function listOrders(): Order[] {
   return Array.from(store.orders.values()).sort((a, b) =>
-    a.orderNumber.localeCompare(b.orderNumber),
+    b.orderNumber.localeCompare(a.orderNumber),
   );
 }
 
