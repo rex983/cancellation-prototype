@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -8,23 +7,29 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/status-badge";
 import {
-  ORDER_STATUS_LABEL,
-  ORDER_STATUS_VARIANT,
+  ORDER_STATUS_SHORT,
+  ORDER_STATUS_TONE,
+  PAYMENT_LABEL,
+  PAYMENT_TONE,
+  MFG_LABEL,
+  MFG_TONE,
   formatCurrency,
-  formatDate,
+  formatShortDate,
 } from "@/lib/format";
 import type { Order } from "@/lib/types";
 
 type Props = {
   orders: Order[];
-  ctaLabel: string;
-  ctaHref: (id: string) => string;
+  hrefFor: (id: string) => string;
   empty: string;
 };
 
-export function OrderTable({ orders, ctaLabel, ctaHref, empty }: Props) {
+const HEAD =
+  "text-[10px] uppercase tracking-wider text-muted-foreground font-semibold";
+
+export function OrderTable({ orders, hrefFor, empty }: Props) {
   if (orders.length === 0) {
     return (
       <div className="rounded-md border bg-card p-8 text-center text-sm text-muted-foreground">
@@ -33,53 +38,102 @@ export function OrderTable({ orders, ctaLabel, ctaHref, empty }: Props) {
     );
   }
   return (
-    <div className="rounded-md border bg-card overflow-hidden">
+    <div className="rounded-lg border bg-card/40 overflow-hidden">
       <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Order #</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Building</TableHead>
-            <TableHead>Mfr</TableHead>
-            <TableHead>Total</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Created</TableHead>
-            <TableHead className="text-right">Action</TableHead>
+          <TableRow className="hover:bg-transparent border-border/60">
+            <TableHead className={HEAD}>Order #</TableHead>
+            <TableHead className={HEAD}>Date</TableHead>
+            <TableHead className={HEAD}>Customer</TableHead>
+            <TableHead className={HEAD}>Sales Rep</TableHead>
+            <TableHead className={HEAD}>Manufacturer</TableHead>
+            <TableHead className={`${HEAD} text-right`}>Total</TableHead>
+            <TableHead className={HEAD}>Payment</TableHead>
+            <TableHead className={`${HEAD} text-center`}>CO</TableHead>
+            <TableHead className={`${HEAD} text-center`}>RO</TableHead>
+            <TableHead className={HEAD}>Status</TableHead>
+            <TableHead className={HEAD}>Mfg</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
-          {orders.map((o) => (
-            <TableRow key={o.id}>
-              <TableCell className="font-medium">{o.orderNumber}</TableCell>
-              <TableCell>
-                <div>{o.customerName}</div>
-                <div className="text-xs text-muted-foreground">
-                  {o.city}, {o.state}
-                </div>
-              </TableCell>
-              <TableCell>
-                <div className="text-sm">
-                  {o.width}&times;{o.length}&times;{o.height}
-                </div>
-                <div className="text-xs text-muted-foreground">{o.model}</div>
-              </TableCell>
-              <TableCell>{o.manufacturer}</TableCell>
-              <TableCell>{formatCurrency(o.totalPrice)}</TableCell>
-              <TableCell>
-                <Badge variant={ORDER_STATUS_VARIANT[o.status]}>
-                  {ORDER_STATUS_LABEL[o.status]}
-                </Badge>
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground">
-                {formatDate(o.createdAt)}
-              </TableCell>
-              <TableCell className="text-right">
-                <Button asChild size="sm" variant="outline">
-                  <Link href={ctaHref(o.id)}>{ctaLabel}</Link>
-                </Button>
-              </TableCell>
-            </TableRow>
-          ))}
+          {orders.map((o) => {
+            const href = hrefFor(o.id);
+            return (
+              <TableRow
+                key={o.id}
+                className="border-border/40 hover:bg-accent/30"
+              >
+                <TableCell className="font-semibold">
+                  <Link href={href} className="block">
+                    {o.orderNumber}
+                  </Link>
+                </TableCell>
+                <TableCell className="text-muted-foreground tabular-nums">
+                  <Link href={href} className="block">
+                    {formatShortDate(o.date)}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Link href={href} className="block">
+                    <div className="font-medium">{o.customerName}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {o.customerEmail}
+                    </div>
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Link href={href} className="block">
+                    {o.salesRep}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Link href={href} className="block">
+                    {o.manufacturer}
+                  </Link>
+                </TableCell>
+                <TableCell className="text-right tabular-nums">
+                  <Link href={href} className="block">
+                    {formatCurrency(o.total)}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Link href={href} className="block">
+                    <StatusBadge tone={PAYMENT_TONE[o.payment]}>
+                      {PAYMENT_LABEL[o.payment]}
+                    </StatusBadge>
+                  </Link>
+                </TableCell>
+                <TableCell className="text-center text-muted-foreground">
+                  <Link href={href} className="block">
+                    {o.co ?? "—"}
+                  </Link>
+                </TableCell>
+                <TableCell className="text-center text-muted-foreground">
+                  <Link href={href} className="block">
+                    {o.ro ?? "—"}
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Link href={href} className="block">
+                    <StatusBadge tone={ORDER_STATUS_TONE[o.status]}>
+                      {ORDER_STATUS_SHORT[o.status]}
+                    </StatusBadge>
+                  </Link>
+                </TableCell>
+                <TableCell>
+                  <Link href={href} className="block">
+                    {o.mfgStatus ? (
+                      <StatusBadge tone={MFG_TONE[o.mfgStatus]}>
+                        {MFG_LABEL[o.mfgStatus]}
+                      </StatusBadge>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </Link>
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
     </div>

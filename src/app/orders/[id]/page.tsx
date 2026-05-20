@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/status-badge";
 import {
   Card,
   CardContent,
@@ -19,7 +19,7 @@ import {
 } from "@/lib/types";
 import {
   CANCEL_STATUS_LABEL,
-  CANCEL_STATUS_VARIANT,
+  CANCEL_STATUS_TONE,
   CANCEL_TYPE_LABEL,
   formatCurrency,
   formatDate,
@@ -69,9 +69,9 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
                   {formatDate(existing.requestedAt)} by {existing.requestedBy}
                 </CardDescription>
               </div>
-              <Badge variant={CANCEL_STATUS_VARIANT[existing.status]}>
+              <StatusBadge tone={CANCEL_STATUS_TONE[existing.status]}>
                 {CANCEL_STATUS_LABEL[existing.status]}
-              </Badge>
+              </StatusBadge>
             </div>
           </CardHeader>
           <CardContent className="space-y-3 text-sm">

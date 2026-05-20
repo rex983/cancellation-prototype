@@ -16,12 +16,11 @@ export default async function CancellationsPage() {
   const postStm = all.filter((c) => c.type === "post_stm");
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 max-w-5xl">
       <div>
-        <h1 className="text-2xl font-bold">Cancellation Review Queue</h1>
-        <p className="text-muted-foreground mt-1">
-          All requested cancellations. Approve to mark the order cancelled, or deny to
-          return it to its prior state.
+        <h1 className="text-2xl font-bold tracking-tight">Cancellation Review</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Approve to mark the order cancelled, or deny to return it to its prior state.
         </p>
       </div>
       <Tabs defaultValue="all" className="w-full">

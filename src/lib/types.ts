@@ -1,12 +1,16 @@
 export type OrderStatus =
-  | "deposit_pending"
-  | "deposit_paid"
-  | "engineering"
-  | "sent_to_manufacturer"
-  | "in_production"
-  | "shipped"
+  | "draft"
+  | "pending_payment"
+  | "awaiting_signature"
+  | "signed"
+  | "sfs"
+  | "stm"
   | "delivered"
   | "cancelled";
+
+export type PaymentStatus = "unpaid" | "partial" | "paid" | "overpaid";
+
+export type MfgStatus = "acknowledged" | "awaiting_reply" | "has_kickback";
 
 export type CancellationType = "pre_stm" | "post_stm";
 
@@ -17,35 +21,28 @@ export type CancellationStatus =
   | "completed";
 
 export type Manufacturer =
-  | "ASC"
-  | "PSB"
-  | "QSB"
-  | "Sunward"
-  | "Renegade";
+  | "Safeguard"
+  | "Best Choice"
+  | "Eagle"
+  | "TBS"
+  | "American Steel"
+  | "SBS";
 
 export type Order = {
   id: string;
   orderNumber: string;
+  date: string;
   customerName: string;
   customerEmail: string;
-  customerPhone: string;
-  state: string;
-  city: string;
-  width: number;
-  length: number;
-  height: number;
-  model: string;
-  manufacturer: Manufacturer;
-  manufacturerOrderNumber?: string;
-  totalPrice: number;
-  depositPaid: number;
-  balanceDue: number;
   salesRep: string;
-  region: string;
+  manufacturer: Manufacturer;
+  total: number;
+  payment: PaymentStatus;
+  co?: number;
+  ro?: number;
   status: OrderStatus;
-  createdAt: string;
-  stmDate?: string;
-  scheduledDelivery?: string;
+  mfgStatus?: MfgStatus;
+  depositPaid: number;
 };
 
 export type Cancellation = {
@@ -63,17 +60,17 @@ export type Cancellation = {
   decisionNotes?: string;
 };
 
+// Pre-STM = anything before "Sent to Manufacturer" — sales-rep territory.
+// Post-STM = STM — BST territory.
 export const PRE_STM_STATUSES: OrderStatus[] = [
-  "deposit_pending",
-  "deposit_paid",
-  "engineering",
+  "draft",
+  "pending_payment",
+  "awaiting_signature",
+  "signed",
+  "sfs",
 ];
 
-export const POST_STM_STATUSES: OrderStatus[] = [
-  "sent_to_manufacturer",
-  "in_production",
-  "shipped",
-];
+export const POST_STM_STATUSES: OrderStatus[] = ["stm"];
 
 export const PRE_STM_REASONS = [
   "Customer changed mind",

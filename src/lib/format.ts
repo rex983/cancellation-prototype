@@ -1,10 +1,16 @@
-import type { OrderStatus, CancellationStatus, CancellationType } from "./types";
+import type {
+  OrderStatus,
+  PaymentStatus,
+  MfgStatus,
+  CancellationStatus,
+  CancellationType,
+} from "./types";
 
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-    maximumFractionDigits: 0,
+    maximumFractionDigits: 2,
   }).format(amount);
 }
 
@@ -17,29 +23,77 @@ export function formatDate(iso?: string): string {
   });
 }
 
+export function formatShortDate(iso?: string): string {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()}`;
+}
+
+export type BadgeTone =
+  | "green"
+  | "blue"
+  | "amber"
+  | "red"
+  | "violet"
+  | "muted";
+
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
-  deposit_pending: "Deposit Pending",
-  deposit_paid: "Deposit Paid",
-  engineering: "Engineering",
-  sent_to_manufacturer: "Sent to Manufacturer",
-  in_production: "In Production",
-  shipped: "Shipped",
+  draft: "Draft",
+  pending_payment: "Pending Payment",
+  awaiting_signature: "Awaiting Signature",
+  signed: "Signed",
+  sfs: "SFS",
+  stm: "STM",
   delivered: "Delivered",
   cancelled: "Cancelled",
 };
 
-export const ORDER_STATUS_VARIANT: Record<
-  OrderStatus,
-  "default" | "secondary" | "outline" | "destructive"
-> = {
-  deposit_pending: "outline",
-  deposit_paid: "secondary",
-  engineering: "secondary",
-  sent_to_manufacturer: "default",
-  in_production: "default",
-  shipped: "default",
-  delivered: "secondary",
-  cancelled: "destructive",
+export const ORDER_STATUS_SHORT: Record<OrderStatus, string> = {
+  draft: "DRAFT",
+  pending_payment: "PEND",
+  awaiting_signature: "AWS",
+  signed: "SIGNED",
+  sfs: "SFS",
+  stm: "STM",
+  delivered: "DLVRD",
+  cancelled: "CXLD",
+};
+
+export const ORDER_STATUS_TONE: Record<OrderStatus, BadgeTone> = {
+  draft: "muted",
+  pending_payment: "amber",
+  awaiting_signature: "amber",
+  signed: "green",
+  sfs: "blue",
+  stm: "green",
+  delivered: "violet",
+  cancelled: "red",
+};
+
+export const PAYMENT_LABEL: Record<PaymentStatus, string> = {
+  unpaid: "UNPAID",
+  partial: "PARTIAL",
+  paid: "PAID",
+  overpaid: "OVERPAID",
+};
+
+export const PAYMENT_TONE: Record<PaymentStatus, BadgeTone> = {
+  unpaid: "muted",
+  partial: "amber",
+  paid: "green",
+  overpaid: "blue",
+};
+
+export const MFG_LABEL: Record<MfgStatus, string> = {
+  acknowledged: "ACKNOWLEDGED",
+  awaiting_reply: "AWAITING REPLY",
+  has_kickback: "HAS KICKBACK",
+};
+
+export const MFG_TONE: Record<MfgStatus, BadgeTone> = {
+  acknowledged: "green",
+  awaiting_reply: "amber",
+  has_kickback: "red",
 };
 
 export const CANCEL_STATUS_LABEL: Record<CancellationStatus, string> = {
@@ -49,14 +103,11 @@ export const CANCEL_STATUS_LABEL: Record<CancellationStatus, string> = {
   completed: "Completed",
 };
 
-export const CANCEL_STATUS_VARIANT: Record<
-  CancellationStatus,
-  "default" | "secondary" | "outline" | "destructive"
-> = {
-  pending_review: "outline",
-  approved: "default",
-  denied: "destructive",
-  completed: "secondary",
+export const CANCEL_STATUS_TONE: Record<CancellationStatus, BadgeTone> = {
+  pending_review: "amber",
+  approved: "green",
+  denied: "red",
+  completed: "violet",
 };
 
 export const CANCEL_TYPE_LABEL: Record<CancellationType, string> = {
