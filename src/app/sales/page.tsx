@@ -22,7 +22,9 @@ export default async function SalesPage(props: PageProps<"/sales">) {
   const sp = await props.searchParams;
   const filter = (Array.isArray(sp.status) ? sp.status[0] : sp.status) ?? "all";
 
-  const allPre = listOrders().filter((o) => PRE_STM_STATUSES.includes(o.status));
+  const allPre = (await listOrders()).filter((o) =>
+    PRE_STM_STATUSES.includes(o.status),
+  );
   const filtered =
     filter === "all" ? allPre : allPre.filter((o) => o.status === filter);
 

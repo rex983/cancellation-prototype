@@ -19,8 +19,10 @@ import { getRole } from "@/lib/roles.server";
 
 export default async function Home() {
   const role = await getRole();
-  const orders = listOrders();
-  const cancellations = listCancellations();
+  const [orders, cancellations] = await Promise.all([
+    listOrders(),
+    listCancellations(),
+  ]);
 
   const preCount = orders.filter((o) => PRE_STM_STATUSES.includes(o.status)).length;
   const postCount = orders.filter((o) => POST_STM_STATUSES.includes(o.status)).length;

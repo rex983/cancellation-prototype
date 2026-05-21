@@ -13,7 +13,9 @@ export default async function BstPage(props: PageProps<"/bst">) {
   const sp = await props.searchParams;
   const mfgFilter = Array.isArray(sp.mfg) ? sp.mfg[0] : sp.mfg;
 
-  const allPost = listOrders().filter((o) => POST_STM_STATUSES.includes(o.status));
+  const allPost = (await listOrders()).filter((o) =>
+    POST_STM_STATUSES.includes(o.status),
+  );
   const filtered = mfgFilter
     ? allPost.filter((o) => o.mfgStatus === mfgFilter)
     : allPost;

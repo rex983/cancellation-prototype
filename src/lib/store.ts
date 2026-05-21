@@ -1,73 +1,119 @@
+import { createClient } from "@supabase/supabase-js";
 import type { Cancellation, Order, OrderStatus } from "./types";
 import { SEED_ORDERS, SEED_CANCELLATIONS } from "./seed";
 
-type StoreShape = {
-  orders: Map<string, Order>;
-  cancellations: Map<string, Cancellation>;
+const TABLE = "prototype_cancel_state";
+const ROW_ID = "main";
+
+type State = {
+  orders: Order[];
+  cancellations: Cancellation[];
 };
 
-const globalForStore = globalThis as unknown as { __cancelStore?: StoreShape };
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!,
+  { auth: { persistSession: false } },
+);
 
-function init(): StoreShape {
-  const orders = new Map<string, Order>();
-  for (const o of SEED_ORDERS) orders.set(o.id, { ...o });
-  const cancellations = new Map<string, Cancellation>();
-  for (const c of SEED_CANCELLATIONS) cancellations.set(c.id, { ...c });
-  return { orders, cancellations };
+function seedState(): State {
+  return {
+    orders: SEED_ORDERS.map((o) => ({ ...o })),
+    cancellations: SEED_CANCELLATIONS.map((c) => ({ ...c })),
+  };
 }
 
-const store: StoreShape = globalForStore.__cancelStore ?? init();
-globalForStore.__cancelStore = store;
+async function readState(): Promise<State> {
+  const { data, error } = await supabase
+    .from(TABLE)
+    .select("state")
+    .eq("id", ROW_ID)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) {
+    const seed = seedState();
+    await writeState(seed);
+    return seed;
+  }
+  return data.state as State;
+}
 
-export function listOrders(): Order[] {
-  return Array.from(store.orders.values()).sort((a, b) =>
+async function writeState(state: State): Promise<void> {
+  const { error } = await supabase
+    .from(TABLE)
+    .upsert({ id: ROW_ID, state, updated_at: new Date().toISOString() });
+  if (error) throw error;
+}
+
+export async function listOrders(): Promise<Order[]> {
+  const state = await readState();
+  return [...state.orders].sort((a, b) =>
     b.orderNumber.localeCompare(a.orderNumber),
   );
 }
 
-export function getOrder(id: string): Order | undefined {
-  return store.orders.get(id);
+export async function getOrder(id: string): Promise<Order | undefined> {
+  const state = await readState();
+  return state.orders.find((o) => o.id === id);
 }
 
-export function updateOrderStatus(id: string, status: OrderStatus): void {
-  const o = store.orders.get(id);
-  if (!o) return;
-  store.orders.set(id, { ...o, status });
+export async function updateOrderStatus(
+  id: string,
+  status: OrderStatus,
+): Promise<void> {
+  const state = await readState();
+  await writeState({
+    ...state,
+    orders: state.orders.map((o) => (o.id === id ? { ...o, status } : o)),
+  });
 }
 
-export function listCancellations(): Cancellation[] {
-  return Array.from(store.cancellations.values()).sort((a, b) =>
+export async function listCancellations(): Promise<Cancellation[]> {
+  const state = await readState();
+  return [...state.cancellations].sort((a, b) =>
     b.requestedAt.localeCompare(a.requestedAt),
   );
 }
 
-export function getCancellation(id: string): Cancellation | undefined {
-  return store.cancellations.get(id);
+export async function getCancellation(
+  id: string,
+): Promise<Cancellation | undefined> {
+  const state = await readState();
+  return state.cancellations.find((c) => c.id === id);
 }
 
-export function getCancellationForOrder(orderId: string): Cancellation | undefined {
-  for (const c of store.cancellations.values()) {
-    if (c.orderId === orderId && c.status !== "denied") return c;
-  }
-  return undefined;
+export async function getCancellationForOrder(
+  orderId: string,
+): Promise<Cancellation | undefined> {
+  const state = await readState();
+  return state.cancellations.find(
+    (c) => c.orderId === orderId && c.status !== "denied",
+  );
 }
 
-export function createCancellation(c: Cancellation): Cancellation {
-  store.cancellations.set(c.id, c);
+export async function createCancellation(
+  c: Cancellation,
+): Promise<Cancellation> {
+  const state = await readState();
+  await writeState({ ...state, cancellations: [...state.cancellations, c] });
   return c;
 }
 
-export function updateCancellation(
+export async function updateCancellation(
   id: string,
   patch: Partial<Cancellation>,
-): Cancellation | undefined {
-  const c = store.cancellations.get(id);
-  if (!c) return undefined;
-  const next = { ...c, ...patch };
-  store.cancellations.set(id, next);
-  return next;
+): Promise<Cancellation | undefined> {
+  const state = await readState();
+  const target = state.cancellations.find((c) => c.id === id);
+  if (!target) return undefined;
+  const updated = { ...target, ...patch };
+  await writeState({
+    ...state,
+    cancellations: state.cancellations.map((c) => (c.id === id ? updated : c)),
+  });
+  return updated;
 }
 
-export function resetStore(): void {
-  globalForStore.__cancelStore = init();
+export async function resetStore(): Promise<void> {
+  await writeState(seedState());
 }

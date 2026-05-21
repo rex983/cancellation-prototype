@@ -29,7 +29,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const role = await getRole();
-  const pendingCancellations = listCancellations().filter(
+  const pendingCancellations = (await listCancellations()).filter(
     (c) => c.status === "pending_review",
   ).length;
 

@@ -9,8 +9,11 @@ export default async function CancellationsPage() {
   const role = await getRole();
   if (!canReview(role)) return <AccessDenied role={role} />;
 
-  const all = listCancellations();
-  const orders = new Map(listOrders().map((o) => [o.id, o]));
+  const [all, allOrders] = await Promise.all([
+    listCancellations(),
+    listOrders(),
+  ]);
+  const orders = new Map(allOrders.map((o) => [o.id, o]));
 
   const preStm = all.filter((c) => c.type === "pre_stm");
   const postStm = all.filter((c) => c.type === "post_stm");

@@ -36,11 +36,11 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
   const sp = await props.searchParams;
   const flow = (Array.isArray(sp.flow) ? sp.flow[0] : sp.flow) ?? "";
 
-  const order = getOrder(id);
+  const order = await getOrder(id);
   if (!order) notFound();
 
   const role = await getRole();
-  const existing = getCancellationForOrder(order.id);
+  const existing = await getCancellationForOrder(order.id);
   const isPre = PRE_STM_STATUSES.includes(order.status);
   const isPost = POST_STM_STATUSES.includes(order.status);
   const allowedPre = canRequestPre(role);

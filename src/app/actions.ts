@@ -5,9 +5,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   createCancellation,
+  getCancellation,
   getCancellationForOrder,
   getOrder,
-  listCancellations,
   updateCancellation,
   updateOrderStatus,
 } from "@/lib/store";
@@ -60,12 +60,12 @@ export async function submitCancellation(formData: FormData) {
     throw new Error("Only sales reps can submit a 72-hour cancellation");
   }
 
-  const order = getOrder(orderId);
+  const order = await getOrder(orderId);
   if (!order) throw new Error("Order not found");
   if (order.status === "cancelled") {
     throw new Error("Order is already cancelled");
   }
-  if (getCancellationForOrder(orderId)) {
+  if (await getCancellationForOrder(orderId)) {
     throw new Error("Active cancellation already exists for this order");
   }
 
@@ -83,7 +83,7 @@ export async function submitCancellation(formData: FormData) {
   }
 
   const id = makeId("cnc");
-  createCancellation({
+  await createCancellation({
     id,
     orderId,
     type,
@@ -113,20 +113,19 @@ export async function decideCancellation(formData: FormData) {
     throw new Error("Your role can't review cancellations");
   }
 
-  const cancellations = listCancellations();
-  const target = cancellations.find((c) => c.id === id);
+  const target = await getCancellation(id);
   if (!target) throw new Error("Cancellation not found");
 
   if (decision === "approve") {
-    updateCancellation(id, {
+    await updateCancellation(id, {
       status: "approved",
       decidedAt: new Date().toISOString(),
       decidedBy,
       decisionNotes,
     });
-    updateOrderStatus(target.orderId, "cancelled");
+    await updateOrderStatus(target.orderId, "cancelled");
   } else if (decision === "deny") {
-    updateCancellation(id, {
+    await updateCancellation(id, {
       status: "denied",
       decidedAt: new Date().toISOString(),
       decidedBy,
@@ -145,7 +144,7 @@ export async function decideCancellation(formData: FormData) {
     const refundMethod = validMethods.includes(refundMethodRaw as RefundMethod)
       ? (refundMethodRaw as RefundMethod)
       : undefined;
-    updateCancellation(id, {
+    await updateCancellation(id, {
       status: "completed",
       decisionNotes: decisionNotes || target.decisionNotes,
       refundMethod: refundMethod ?? target.refundMethod,
