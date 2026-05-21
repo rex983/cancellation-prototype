@@ -149,12 +149,25 @@ export function CancellationList({
                 </div>
               )}
               <div className="flex flex-wrap items-center gap-2 pt-2">
+                {canDecide &&
+                  c.status !== "completed" &&
+                  c.status !== "denied" && (
+                    <RefundDialog
+                      cancellation={c}
+                      order={order}
+                      trigger={<Button size="sm">Refund via Stripe</Button>}
+                    />
+                  )}
                 {canDecide && c.status === "pending_review" && (
                   <>
                     <DecisionDialog
                       cancellationId={c.id}
                       decision="approve"
-                      trigger={<Button size="sm">Approve</Button>}
+                      trigger={
+                        <Button size="sm" variant="outline">
+                          Approve only
+                        </Button>
+                      }
                     />
                     <DecisionDialog
                       cancellationId={c.id}
@@ -168,22 +181,15 @@ export function CancellationList({
                   </>
                 )}
                 {canDecide && c.status === "approved" && (
-                  <>
-                    <RefundDialog
-                      cancellation={c}
-                      order={order}
-                      trigger={<Button size="sm">Refund via Stripe</Button>}
-                    />
-                    <DecisionDialog
-                      cancellationId={c.id}
-                      decision="complete"
-                      trigger={
-                        <Button size="sm" variant="outline">
-                          Mark Complete (manual)
-                        </Button>
-                      }
-                    />
-                  </>
+                  <DecisionDialog
+                    cancellationId={c.id}
+                    decision="complete"
+                    trigger={
+                      <Button size="sm" variant="outline">
+                        Mark Complete (manual)
+                      </Button>
+                    }
+                  />
                 )}
                 <Button asChild variant="ghost" size="sm" className="ml-auto">
                   <Link href={`/orders/${order.id}`}>

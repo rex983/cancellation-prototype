@@ -179,8 +179,11 @@ export async function processStripeRefund(formData: FormData) {
 
   const target = await getCancellation(id);
   if (!target) throw new Error("Cancellation not found");
-  if (target.status !== "approved") {
-    throw new Error("Refund only available on approved cancellations");
+  if (target.status === "completed") {
+    throw new Error("Cancellation is already completed");
+  }
+  if (target.status === "denied") {
+    throw new Error("Cancellation was denied — can't refund");
   }
 
   const order = await getOrder(target.orderId);
@@ -199,6 +202,7 @@ export async function processStripeRefund(formData: FormData) {
     .slice(2, 10)}`;
   const now = new Date().toISOString();
 
+  const wasPending = target.status === "pending_review";
   await updateCancellation(id, {
     status: "completed",
     refundMethod: "stripe",
@@ -206,9 +210,16 @@ export async function processStripeRefund(formData: FormData) {
     refundedAmount: amount,
     refundedAt: now,
     refundedBy,
+    decidedAt: target.decidedAt ?? now,
+    decidedBy: target.decidedBy ?? refundedBy,
     decisionNotes: target.decisionNotes,
   });
+  if (wasPending) {
+    await updateOrderStatus(target.orderId, "cancelled");
+  }
 
   revalidatePath("/cancellations");
+  revalidatePath("/sales");
+  revalidatePath("/bst");
   revalidatePath(`/orders/${target.orderId}`);
 }

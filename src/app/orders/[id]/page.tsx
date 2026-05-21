@@ -127,13 +127,15 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
               </div>
             )}
             <div className="flex flex-wrap gap-2 pt-1">
-              {canReview(role) && existing.status === "approved" && (
-                <RefundDialog
-                  cancellation={existing}
-                  order={order}
-                  trigger={<Button size="sm">Refund via Stripe</Button>}
-                />
-              )}
+              {canReview(role) &&
+                existing.status !== "completed" &&
+                existing.status !== "denied" && (
+                  <RefundDialog
+                    cancellation={existing}
+                    order={order}
+                    trigger={<Button size="sm">Refund via Stripe</Button>}
+                  />
+                )}
               <Button asChild variant="outline" size="sm">
                 <Link href="/cancellations">View in review queue →</Link>
               </Button>
