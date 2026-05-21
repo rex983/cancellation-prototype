@@ -89,6 +89,44 @@ export function CancellationList({
                   )}
                 </div>
               )}
+              <div className="rounded-md border bg-muted/30 p-3 space-y-1.5">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Stripe IDs
+                </div>
+                {order.stripeCustomerId ? (
+                  <div className="flex items-baseline gap-2 text-xs">
+                    <span className="text-muted-foreground w-20 shrink-0">
+                      Customer
+                    </span>
+                    <code className="font-mono break-all">
+                      {order.stripeCustomerId}
+                    </code>
+                  </div>
+                ) : (
+                  <div className="text-xs text-muted-foreground">
+                    No Stripe customer on file
+                  </div>
+                )}
+                {(order.stripePayments ?? []).map((p) => (
+                  <div
+                    key={p.id}
+                    className="flex items-baseline gap-2 text-xs"
+                  >
+                    <span className="text-muted-foreground w-20 shrink-0">
+                      {p.description ?? "Payment"}
+                    </span>
+                    <code className="font-mono break-all">{p.id}</code>
+                    {p.chargeId && (
+                      <code className="font-mono break-all text-muted-foreground">
+                        / {p.chargeId}
+                      </code>
+                    )}
+                    <span className="ml-auto tabular-nums font-medium shrink-0">
+                      {formatCurrency(p.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
               {c.notes && (
                 <div>
                   <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
