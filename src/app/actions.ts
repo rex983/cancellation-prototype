@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   createCancellation,
+  createCredit,
   getCancellation,
   getCancellationForOrder,
   getOrder,
@@ -157,6 +158,144 @@ export async function decideCancellation(formData: FormData) {
   revalidatePath("/bst");
 }
 
+export async function sendCancellationForm(formData: FormData) {
+  const orderId = String(formData.get("orderId") ?? "");
+  const requestedBy = String(formData.get("requestedBy") ?? "");
+  const notes = String(formData.get("notes") ?? "");
+
+  const role = await getRole();
+  if (!canRequestPost(role)) {
+    throw new Error("Only BST can send the cancellation request form");
+  }
+  if (!requestedBy.trim()) {
+    throw new Error("BST member name is required");
+  }
+
+  const order = await getOrder(orderId);
+  if (!order) throw new Error("Order not found");
+  if (order.status === "cancelled" || order.status === "cancelled_cof") {
+    throw new Error("Order is already cancelled");
+  }
+  if (!POST_STM_STATUSES.includes(order.status)) {
+    throw new Error("Order is not post-STM");
+  }
+  if (await getCancellationForOrder(orderId)) {
+    throw new Error("Active cancellation already exists for this order");
+  }
+
+  const id = makeId("cnc");
+  const now = new Date().toISOString();
+  await createCancellation({
+    id,
+    orderId,
+    type: "post_stm",
+    status: "awaiting_customer",
+    reason: "Customer cancellation request",
+    notes,
+    requestedBy,
+    requestedAt: now,
+    refundAmount: order.depositPaid,
+    formSentAt: now,
+  });
+
+  revalidatePath("/bst");
+  revalidatePath("/cancellations");
+  revalidatePath(`/orders/${orderId}`);
+  redirect("/cancellations");
+}
+
+export async function markFormReturned(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const formReturnedBy = String(formData.get("formReturnedBy") ?? "");
+
+  const role = await getRole();
+  if (!canRequestPost(role) && !canReview(role)) {
+    throw new Error("Your role can't mark forms returned");
+  }
+  if (!formReturnedBy.trim()) {
+    throw new Error("Your name is required");
+  }
+
+  const target = await getCancellation(id);
+  if (!target) throw new Error("Cancellation not found");
+  if (target.status !== "awaiting_customer") {
+    throw new Error("This cancellation isn't awaiting a customer signature");
+  }
+
+  await updateCancellation(id, {
+    status: "pending_review",
+    formReturnedAt: new Date().toISOString(),
+    formReturnedBy,
+  });
+
+  revalidatePath("/cancellations");
+  revalidatePath(`/orders/${target.orderId}`);
+}
+
+export async function convertToCOF(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const amount = Number(formData.get("amount"));
+  const confirmAmount = Number(formData.get("confirmAmount"));
+  const createdBy = String(formData.get("createdBy") ?? "");
+  const notes = String(formData.get("notes") ?? "");
+
+  const role = await getRole();
+  if (!canReview(role)) {
+    throw new Error("Your role can't convert to Credit on File");
+  }
+  if (!createdBy.trim()) {
+    throw new Error("Reviewer name is required");
+  }
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Credit amount must be greater than zero");
+  }
+  if (amount !== confirmAmount) {
+    throw new Error("Amounts don't match — re-enter the confirmation amount");
+  }
+
+  const target = await getCancellation(id);
+  if (!target) throw new Error("Cancellation not found");
+  if (target.status === "completed" || target.status === "denied") {
+    throw new Error("Cancellation is already closed");
+  }
+
+  const order = await getOrder(target.orderId);
+  if (!order) throw new Error("Order not found");
+
+  const now = new Date().toISOString();
+  const cofId = makeId("cof");
+  await createCredit({
+    id: cofId,
+    orderId: order.id,
+    orderNumber: order.orderNumber,
+    customerName: order.customerName,
+    customerEmail: order.customerEmail,
+    amount,
+    notes,
+    createdAt: now,
+    createdBy,
+    cancellationId: target.id,
+    status: "active",
+  });
+  await updateCancellation(id, {
+    status: "completed",
+    outcome: "cof",
+    cofId,
+    decidedAt: target.decidedAt ?? now,
+    decidedBy: target.decidedBy ?? createdBy,
+    refundedAmount: amount,
+    refundedAt: now,
+    refundedBy: createdBy,
+    decisionNotes: notes || target.decisionNotes,
+  });
+  await updateOrderStatus(order.id, "cancelled_cof");
+
+  revalidatePath("/cancellations");
+  revalidatePath("/cof");
+  revalidatePath("/bst");
+  revalidatePath(`/orders/${order.id}`);
+}
+
 export async function processRefund(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const amount = Number(formData.get("amount"));
@@ -205,6 +344,11 @@ export async function processRefund(formData: FormData) {
   if (target.status === "denied") {
     throw new Error("Cancellation was denied — can't refund");
   }
+  if (target.status === "awaiting_customer") {
+    throw new Error(
+      "Customer hasn't returned the signed form yet — mark it returned first",
+    );
+  }
 
   const order = await getOrder(target.orderId);
   if (!order) throw new Error("Order not found");
@@ -227,9 +371,10 @@ export async function processRefund(formData: FormData) {
       : refundReferenceInput;
   const now = new Date().toISOString();
 
-  const wasPending = target.status === "pending_review";
+  const needsOrderCancel = target.status !== "approved" || order.status !== "cancelled";
   await updateCancellation(id, {
     status: "completed",
+    outcome: "refund",
     refundMethod,
     refundReference,
     refundedAmount: amount,
@@ -239,7 +384,7 @@ export async function processRefund(formData: FormData) {
     decidedBy: target.decidedBy ?? refundedBy,
     decisionNotes: target.decisionNotes,
   });
-  if (wasPending) {
+  if (needsOrderCancel) {
     await updateOrderStatus(target.orderId, "cancelled");
   }
 

@@ -7,6 +7,7 @@ import {
   FileText,
   Truck,
   Ban,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,12 @@ export function Sidebar({
       icon: Ban,
       count: pendingCancellations || undefined,
       show: canReview,
+    },
+    {
+      href: "/cof",
+      label: "Credit on File",
+      icon: Wallet,
+      show: canSeeBst,
     },
   ];
 
@@ -105,7 +112,7 @@ export function Sidebar({
           })}
       </nav>
       <div className="px-4 py-3 border-t text-[10px] text-muted-foreground">
-        Prototype · state resets on redeploy
+        Prototype · state persisted in Supabase
       </div>
     </aside>
   );

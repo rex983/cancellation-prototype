@@ -1,5 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Cancellation, Order, OrderStatus } from "./types";
+import type {
+  Cancellation,
+  CreditOnFile,
+  Order,
+  OrderStatus,
+} from "./types";
 import { SEED_ORDERS, SEED_CANCELLATIONS } from "./seed";
 
 const TABLE = "prototype_cancel_state";
@@ -8,6 +13,7 @@ const ROW_ID = "main";
 type State = {
   orders: Order[];
   cancellations: Cancellation[];
+  credits: CreditOnFile[];
 };
 
 const supabase = createClient(
@@ -20,6 +26,7 @@ function seedState(): State {
   return {
     orders: SEED_ORDERS.map((o) => ({ ...o })),
     cancellations: SEED_CANCELLATIONS.map((c) => ({ ...c })),
+    credits: [],
   };
 }
 
@@ -35,11 +42,11 @@ async function readState(): Promise<State> {
     await writeState(seed);
     return seed;
   }
-  const state = data.state as State;
+  const state = data.state as Partial<State>;
   // Backfill schema additions onto rows that were seeded before the field
-  // existed (Stripe fields, etc.) without dropping live cancellations.
+  // existed (Stripe fields, credits[], etc.) without dropping live data.
   const seedById = new Map(SEED_ORDERS.map((o) => [o.id, o]));
-  const enrichedOrders = state.orders.map((o) => {
+  const enrichedOrders = (state.orders ?? []).map((o) => {
     if (o.stripePayments !== undefined) return o;
     const seed = seedById.get(o.id);
     if (!seed) return o;
@@ -49,7 +56,11 @@ async function readState(): Promise<State> {
       stripePayments: seed.stripePayments,
     };
   });
-  return { ...state, orders: enrichedOrders };
+  return {
+    orders: enrichedOrders,
+    cancellations: state.cancellations ?? [],
+    credits: state.credits ?? [],
+  };
 }
 
 async function writeState(state: State): Promise<void> {
@@ -130,4 +141,22 @@ export async function updateCancellation(
 
 export async function resetStore(): Promise<void> {
   await writeState(seedState());
+}
+
+export async function listCredits(): Promise<CreditOnFile[]> {
+  const state = await readState();
+  return [...state.credits].sort((a, b) =>
+    b.createdAt.localeCompare(a.createdAt),
+  );
+}
+
+export async function getCredit(id: string): Promise<CreditOnFile | undefined> {
+  const state = await readState();
+  return state.credits.find((c) => c.id === id);
+}
+
+export async function createCredit(c: CreditOnFile): Promise<CreditOnFile> {
+  const state = await readState();
+  await writeState({ ...state, credits: [...state.credits, c] });
+  return c;
 }

@@ -11,6 +11,8 @@ import {
 import { StatusBadge } from "@/components/status-badge";
 import { DecisionDialog } from "@/components/decision-dialog";
 import { RefundDialog } from "@/components/refund-dialog";
+import { FormReturnedDialog } from "@/components/form-returned-dialog";
+import { COFDialog } from "@/components/cof-dialog";
 import {
   CANCEL_STATUS_LABEL,
   CANCEL_STATUS_TONE,
@@ -149,36 +151,45 @@ export function CancellationList({
                 </div>
               )}
               <div className="flex flex-wrap items-center gap-2 pt-2">
+                {canDecide && c.status === "awaiting_customer" && (
+                  <FormReturnedDialog
+                    cancellationId={c.id}
+                    trigger={<Button size="sm">Mark Form Returned</Button>}
+                  />
+                )}
                 {canDecide &&
                   c.status !== "completed" &&
-                  c.status !== "denied" && (
-                    <RefundDialog
-                      cancellation={c}
-                      order={order}
-                      trigger={<Button size="sm">Refund</Button>}
-                    />
+                  c.status !== "denied" &&
+                  c.status !== "awaiting_customer" && (
+                    <>
+                      <RefundDialog
+                        cancellation={c}
+                        order={order}
+                        trigger={<Button size="sm">Refund</Button>}
+                      />
+                      {c.type === "post_stm" && (
+                        <COFDialog
+                          cancellation={c}
+                          order={order}
+                          trigger={
+                            <Button size="sm" variant="secondary">
+                              Credit on File
+                            </Button>
+                          }
+                        />
+                      )}
+                    </>
                   )}
                 {canDecide && c.status === "pending_review" && (
-                  <>
-                    <DecisionDialog
-                      cancellationId={c.id}
-                      decision="approve"
-                      trigger={
-                        <Button size="sm" variant="outline">
-                          Approve only
-                        </Button>
-                      }
-                    />
-                    <DecisionDialog
-                      cancellationId={c.id}
-                      decision="deny"
-                      trigger={
-                        <Button size="sm" variant="outline">
-                          Deny
-                        </Button>
-                      }
-                    />
-                  </>
+                  <DecisionDialog
+                    cancellationId={c.id}
+                    decision="deny"
+                    trigger={
+                      <Button size="sm" variant="outline">
+                        Deny
+                      </Button>
+                    }
+                  />
                 )}
                 <Button asChild variant="ghost" size="sm" className="ml-auto">
                   <Link href={`/orders/${order.id}`}>

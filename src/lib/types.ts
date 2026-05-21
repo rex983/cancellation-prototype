@@ -6,7 +6,8 @@ export type OrderStatus =
   | "sfs"
   | "stm"
   | "delivered"
-  | "cancelled";
+  | "cancelled"
+  | "cancelled_cof";
 
 export type PaymentStatus = "unpaid" | "partial" | "paid" | "overpaid";
 
@@ -23,6 +24,7 @@ export type RefundMethod =
   | "other";
 
 export type CancellationStatus =
+  | "awaiting_customer"
   | "pending_review"
   | "approved"
   | "denied"
@@ -84,7 +86,30 @@ export type Cancellation = {
   refundedAmount?: number;
   refundedAt?: string;
   refundedBy?: string;
+  // Post-STM email-flow tracking
+  formSentAt?: string;
+  formReturnedAt?: string;
+  formReturnedBy?: string;
+  outcome?: "refund" | "cof";
+  cofId?: string;
 };
+
+export type CreditOnFile = {
+  id: string;
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  customerEmail: string;
+  amount: number;
+  notes: string;
+  createdAt: string;
+  createdBy: string;
+  cancellationId: string;
+  status: "active" | "applied" | "expired";
+};
+
+export const FORMSTACK_CANCELLATION_URL =
+  "https://bigbuildingsdirect.formstack.com/forms/big_buildings_direct";
 
 // Pre-STM = anything before "Sent to Manufacturer" — sales-rep territory.
 // Post-STM = STM — BST territory.

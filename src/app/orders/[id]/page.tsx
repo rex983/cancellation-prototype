@@ -14,6 +14,8 @@ import { OrderStripeCard } from "@/components/order-stripe-card";
 import { PostStmForm } from "@/components/post-stm-form";
 import { WindowForm } from "@/components/window-form";
 import { RefundDialog } from "@/components/refund-dialog";
+import { FormReturnedDialog } from "@/components/form-returned-dialog";
+import { COFDialog } from "@/components/cof-dialog";
 import { getCancellationForOrder, getOrder } from "@/lib/store";
 import {
   PRE_STM_STATUSES,
@@ -127,14 +129,34 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
               </div>
             )}
             <div className="flex flex-wrap gap-2 pt-1">
+              {canReview(role) && existing.status === "awaiting_customer" && (
+                <FormReturnedDialog
+                  cancellationId={existing.id}
+                  trigger={<Button size="sm">Mark Form Returned</Button>}
+                />
+              )}
               {canReview(role) &&
                 existing.status !== "completed" &&
-                existing.status !== "denied" && (
-                  <RefundDialog
-                    cancellation={existing}
-                    order={order}
-                    trigger={<Button size="sm">Refund</Button>}
-                  />
+                existing.status !== "denied" &&
+                existing.status !== "awaiting_customer" && (
+                  <>
+                    <RefundDialog
+                      cancellation={existing}
+                      order={order}
+                      trigger={<Button size="sm">Refund</Button>}
+                    />
+                    {existing.type === "post_stm" && (
+                      <COFDialog
+                        cancellation={existing}
+                        order={order}
+                        trigger={
+                          <Button size="sm" variant="secondary">
+                            Credit on File
+                          </Button>
+                        }
+                      />
+                    )}
+                  </>
                 )}
               <Button asChild variant="outline" size="sm">
                 <Link href="/cancellations">View in review queue →</Link>
@@ -142,10 +164,14 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
             </div>
           </CardContent>
         </Card>
-      ) : order.status === "cancelled" ? (
+      ) : order.status === "cancelled" || order.status === "cancelled_cof" ? (
         <Card>
           <CardHeader>
-            <CardTitle>Order is cancelled</CardTitle>
+            <CardTitle>
+              {order.status === "cancelled_cof"
+                ? "Order is cancelled — funds held as Credit on File"
+                : "Order is cancelled"}
+            </CardTitle>
             <CardDescription>No further action available.</CardDescription>
           </CardHeader>
         </Card>

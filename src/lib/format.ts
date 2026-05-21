@@ -47,6 +47,7 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   stm: "STM",
   delivered: "Delivered",
   cancelled: "Cancelled",
+  cancelled_cof: "Cancelled (COF)",
 };
 
 export const ORDER_STATUS_SHORT: Record<OrderStatus, string> = {
@@ -58,6 +59,7 @@ export const ORDER_STATUS_SHORT: Record<OrderStatus, string> = {
   stm: "STM",
   delivered: "DLVRD",
   cancelled: "CXLD",
+  cancelled_cof: "CXLD-COF",
 };
 
 export const ORDER_STATUS_TONE: Record<OrderStatus, BadgeTone> = {
@@ -69,6 +71,7 @@ export const ORDER_STATUS_TONE: Record<OrderStatus, BadgeTone> = {
   stm: "green",
   delivered: "violet",
   cancelled: "red",
+  cancelled_cof: "violet",
 };
 
 export const PAYMENT_LABEL: Record<PaymentStatus, string> = {
@@ -98,6 +101,7 @@ export const MFG_TONE: Record<MfgStatus, BadgeTone> = {
 };
 
 export const CANCEL_STATUS_LABEL: Record<CancellationStatus, string> = {
+  awaiting_customer: "Awaiting Customer Signature",
   pending_review: "Pending Review",
   approved: "Approved",
   denied: "Denied",
@@ -105,6 +109,7 @@ export const CANCEL_STATUS_LABEL: Record<CancellationStatus, string> = {
 };
 
 export const CANCEL_STATUS_TONE: Record<CancellationStatus, BadgeTone> = {
+  awaiting_customer: "blue",
   pending_review: "amber",
   approved: "green",
   denied: "red",
