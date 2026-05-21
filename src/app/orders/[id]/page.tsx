@@ -9,9 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrderSummary } from "@/components/order-summary";
-import { PreStmForm } from "@/components/pre-stm-form";
 import { PostStmForm } from "@/components/post-stm-form";
 import { WindowForm } from "@/components/window-form";
 import { getCancellationForOrder, getOrder } from "@/lib/store";
@@ -106,18 +104,7 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
           </CardHeader>
         </Card>
       ) : showPreFlow ? (
-        <Tabs defaultValue="pre" className="w-full">
-          <TabsList>
-            <TabsTrigger value="pre">Pre-STM</TabsTrigger>
-            <TabsTrigger value="window">72-Hour</TabsTrigger>
-          </TabsList>
-          <TabsContent value="pre" className="mt-4">
-            <PreStmForm order={order} />
-          </TabsContent>
-          <TabsContent value="window" className="mt-4">
-            <WindowForm order={order} />
-          </TabsContent>
-        </Tabs>
+        <WindowForm order={order} />
       ) : showPostForm ? (
         <PostStmForm order={order} />
       ) : isPre || isPost ? (

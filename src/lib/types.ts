@@ -76,17 +76,6 @@ export const PRE_STM_STATUSES: OrderStatus[] = [
 
 export const POST_STM_STATUSES: OrderStatus[] = ["stm"];
 
-export const PRE_STM_REASONS = [
-  "Customer changed mind",
-  "Pricing concerns",
-  "Found alternate provider",
-  "Site not ready / permitting issue",
-  "Financing fell through",
-  "Customer non-responsive",
-  "Duplicate order",
-  "Other",
-];
-
 export const POST_STM_REASONS = [
   "Customer cancellation request",
   "Manufacturing delay / customer unwilling to wait",
