@@ -56,8 +56,8 @@ export async function submitCancellation(formData: FormData) {
   if (type === "post_stm" && !canRequestPost(role)) {
     throw new Error("Your role can't submit a post-STM cancellation");
   }
-  if (type === "window_72h" && !canRequestPost(role)) {
-    throw new Error("Only BST can submit a 72-hour cancellation");
+  if (type === "window_72h" && !canRequestPre(role)) {
+    throw new Error("Only sales reps can submit a 72-hour cancellation");
   }
 
   const order = getOrder(orderId);
@@ -77,6 +77,9 @@ export async function submitCancellation(formData: FormData) {
   }
   if (type === "post_stm" && !isPost) {
     throw new Error("Order is not post-STM");
+  }
+  if (type === "window_72h" && !isPre) {
+    throw new Error("72-hour cancellation only applies to pre-STM orders");
   }
 
   const id = makeId("cnc");

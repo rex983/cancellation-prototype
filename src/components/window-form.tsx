@@ -51,18 +51,18 @@ export function WindowForm({ order }: { order: Order }) {
       <CardHeader>
         <CardTitle>72-Hour Cancellation Request</CardTitle>
         <CardDescription>
-          BST-only flow. Submits to the 72-hour queue for manager approval and
-          refund processing.
+          Sales rep flow for pre-STM orders. Submits to the 72-hour queue for
+          manager approval and refund processing.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form action={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="requestedBy">BST Member Name</Label>
+            <Label htmlFor="requestedBy">Sales Rep Name</Label>
             <Input
               id="requestedBy"
               name="requestedBy"
-              placeholder="e.g. Jordan Pace"
+              defaultValue={order.salesRep}
               required
             />
           </div>

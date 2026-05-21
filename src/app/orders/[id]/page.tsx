@@ -47,18 +47,8 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
   const isPost = POST_STM_STATUSES.includes(order.status);
   const allowedPre = canRequestPre(role);
   const allowedPost = canRequestPost(role);
-  const notCancelled = order.status !== "cancelled";
-  const showPreForm = isPre && allowedPre;
+  const showPreFlow = isPre && allowedPre;
   const showPostForm = isPost && allowedPost;
-  const showWindowForm = allowedPost && notCancelled;
-  const standardFlow = showPreForm
-    ? "pre"
-    : showPostForm
-      ? "post"
-      : null;
-  const flowOptions: Array<"standard" | "window"> = [];
-  if (standardFlow) flowOptions.push("standard");
-  if (showWindowForm) flowOptions.push("window");
 
   return (
     <div className="space-y-6">
@@ -115,31 +105,21 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
             <CardDescription>No further action available.</CardDescription>
           </CardHeader>
         </Card>
-      ) : flowOptions.length === 2 ? (
-        <Tabs defaultValue="standard" className="w-full">
+      ) : showPreFlow ? (
+        <Tabs defaultValue="pre" className="w-full">
           <TabsList>
-            <TabsTrigger value="standard">
-              {standardFlow === "pre" ? "Pre-STM" : "Post-STM"}
-            </TabsTrigger>
+            <TabsTrigger value="pre">Pre-STM</TabsTrigger>
             <TabsTrigger value="window">72-Hour</TabsTrigger>
           </TabsList>
-          <TabsContent value="standard" className="mt-4">
-            {standardFlow === "pre" ? (
-              <PreStmForm order={order} />
-            ) : (
-              <PostStmForm order={order} />
-            )}
+          <TabsContent value="pre" className="mt-4">
+            <PreStmForm order={order} />
           </TabsContent>
           <TabsContent value="window" className="mt-4">
             <WindowForm order={order} />
           </TabsContent>
         </Tabs>
-      ) : showPreForm ? (
-        <PreStmForm order={order} />
       ) : showPostForm ? (
         <PostStmForm order={order} />
-      ) : showWindowForm ? (
-        <WindowForm order={order} />
       ) : isPre || isPost ? (
         <Card>
           <CardHeader>
