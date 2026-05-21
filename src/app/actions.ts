@@ -156,3 +156,59 @@ export async function decideCancellation(formData: FormData) {
   revalidatePath("/sales");
   revalidatePath("/bst");
 }
+
+export async function processStripeRefund(formData: FormData) {
+  const id = String(formData.get("id") ?? "");
+  const amount = Number(formData.get("amount"));
+  const confirmAmount = Number(formData.get("confirmAmount"));
+  const refundedBy = String(formData.get("refundedBy") ?? "");
+
+  const role = await getRole();
+  if (!canReview(role)) {
+    throw new Error("Your role can't process refunds");
+  }
+  if (!refundedBy) {
+    throw new Error("Reviewer name is required");
+  }
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Refund amount must be greater than zero");
+  }
+  if (amount !== confirmAmount) {
+    throw new Error("Amounts don't match — re-enter the confirmation amount");
+  }
+
+  const target = await getCancellation(id);
+  if (!target) throw new Error("Cancellation not found");
+  if (target.status !== "approved") {
+    throw new Error("Refund only available on approved cancellations");
+  }
+
+  const order = await getOrder(target.orderId);
+  if (!order) throw new Error("Order not found");
+  const captured = (order.stripePayments ?? [])
+    .filter((p) => p.status === "succeeded")
+    .reduce((sum, p) => sum + p.amount, 0);
+  if (amount > captured) {
+    throw new Error(
+      `Refund (${amount.toFixed(2)}) exceeds captured Stripe payments (${captured.toFixed(2)})`,
+    );
+  }
+
+  const stripeRefundId = `re_3M${order.orderNumber}${Math.random()
+    .toString(36)
+    .slice(2, 10)}`;
+  const now = new Date().toISOString();
+
+  await updateCancellation(id, {
+    status: "completed",
+    refundMethod: "stripe",
+    refundReference: stripeRefundId,
+    refundedAmount: amount,
+    refundedAt: now,
+    refundedBy,
+    decisionNotes: target.decisionNotes,
+  });
+
+  revalidatePath("/cancellations");
+  revalidatePath(`/orders/${target.orderId}`);
+}

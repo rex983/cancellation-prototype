@@ -1,6 +1,68 @@
-import type { Order } from "./types";
+import type { Order, StripePayment } from "./types";
 
-export const SEED_ORDERS: Order[] = [
+type RawOrder = Omit<Order, "stripeCustomerId" | "stripePayments">;
+
+// Deterministic mock Stripe IDs so they stay stable across redeploys / re-seeds.
+function stripeSuffix(orderNumber: string, salt: string): string {
+  const base = `${orderNumber}${salt}`;
+  let hash = 0;
+  for (let i = 0; i < base.length; i++) {
+    hash = (hash * 31 + base.charCodeAt(i)) >>> 0;
+  }
+  return hash.toString(36).padStart(8, "x").slice(0, 14);
+}
+
+function mockStripePayments(o: RawOrder): StripePayment[] {
+  if (o.depositPaid <= 0) return [];
+  const payments: StripePayment[] = [];
+  const orderDate = new Date(o.date);
+  const depositDate = new Date(orderDate.getTime() - 24 * 60 * 60 * 1000).toISOString();
+
+  payments.push({
+    id: `pi_3M${stripeSuffix(o.orderNumber, "dep")}`,
+    chargeId: `ch_3M${stripeSuffix(o.orderNumber, "depch")}`,
+    amount: o.depositPaid,
+    status: "succeeded",
+    createdAt: depositDate,
+    description: "Deposit",
+  });
+
+  if (o.depositPaid === o.total && o.total > 0) {
+    return [
+      {
+        ...payments[0],
+        amount: o.total,
+        description: "Order paid in full",
+      },
+    ];
+  }
+  if (o.payment === "overpaid") {
+    payments.push({
+      id: `pi_3M${stripeSuffix(o.orderNumber, "ovr")}`,
+      chargeId: `ch_3M${stripeSuffix(o.orderNumber, "ovrch")}`,
+      amount: Math.round((o.total - o.depositPaid + 250) * 100) / 100,
+      status: "succeeded",
+      createdAt: orderDate.toISOString(),
+      description: "Additional payment (overpayment)",
+    });
+  }
+  return payments;
+}
+
+function withStripe(orders: RawOrder[]): Order[] {
+  return orders.map((o) => {
+    const hasCustomer = o.depositPaid > 0 || o.payment !== "unpaid";
+    return {
+      ...o,
+      stripeCustomerId: hasCustomer
+        ? `cus_NP${stripeSuffix(o.orderNumber, "cus")}`
+        : undefined,
+      stripePayments: mockStripePayments(o),
+    };
+  });
+}
+
+const ORDERS_RAW: RawOrder[] = [
   {
     id: "ord_26852",
     orderNumber: "26852",
@@ -426,8 +488,10 @@ export const SEED_ORDERS: Order[] = [
   },
 ];
 
+export const SEED_ORDERS: Order[] = withStripe(ORDERS_RAW);
+
 // Pre-seeded cancellation requests so the review queue isn't empty on first
-// load after a redeploy. The in-memory store resets, so these come back.
+// load. Re-seeded by the Supabase store if the row is empty/missing.
 export const SEED_CANCELLATIONS = [
   {
     id: "cnc_seed_1",

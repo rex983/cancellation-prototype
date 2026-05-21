@@ -10,8 +10,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { OrderSummary } from "@/components/order-summary";
+import { OrderStripeCard } from "@/components/order-stripe-card";
 import { PostStmForm } from "@/components/post-stm-form";
 import { WindowForm } from "@/components/window-form";
+import { RefundDialog } from "@/components/refund-dialog";
 import { getCancellationForOrder, getOrder } from "@/lib/store";
 import {
   PRE_STM_STATUSES,
@@ -21,6 +23,7 @@ import {
   CANCEL_STATUS_LABEL,
   CANCEL_STATUS_TONE,
   CANCEL_TYPE_LABEL,
+  REFUND_METHOD_LABEL,
   formatCurrency,
   formatDate,
 } from "@/lib/format";
@@ -28,6 +31,7 @@ import {
   ROLE_LABEL,
   canRequestPost,
   canRequestPre,
+  canReview,
 } from "@/lib/roles";
 import { getRole } from "@/lib/roles.server";
 
@@ -59,11 +63,12 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
         </Link>
       </div>
       <OrderSummary order={order} />
+      <OrderStripeCard order={order} />
 
       {existing ? (
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-3">
               <div>
                 <CardTitle>Cancellation in progress</CardTitle>
                 <CardDescription>
@@ -88,12 +93,51 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
               </div>
             )}
             <div>
-              <span className="text-muted-foreground">Refund: </span>
-              <span className="font-medium">{formatCurrency(existing.refundAmount)}</span>
+              <span className="text-muted-foreground">Proposed refund: </span>
+              <span className="font-medium">
+                {formatCurrency(existing.refundAmount)}
+              </span>
             </div>
-            <Button asChild variant="outline" size="sm">
-              <Link href="/cancellations">View in review queue →</Link>
-            </Button>
+            {existing.refundedAmount !== undefined && (
+              <div>
+                <span className="text-muted-foreground">Refunded: </span>
+                <span className="font-medium">
+                  {formatCurrency(existing.refundedAmount)}
+                </span>
+                {existing.refundMethod && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    via {REFUND_METHOD_LABEL[existing.refundMethod]}
+                  </span>
+                )}
+                {existing.refundReference && (
+                  <>
+                    {" "}
+                    <code className="rounded bg-muted/60 px-1.5 py-0.5 text-[11px] font-mono">
+                      {existing.refundReference}
+                    </code>
+                  </>
+                )}
+                {existing.refundedAt && (
+                  <span className="text-muted-foreground">
+                    {" "}
+                    · {formatDate(existing.refundedAt)}
+                  </span>
+                )}
+              </div>
+            )}
+            <div className="flex flex-wrap gap-2 pt-1">
+              {canReview(role) && existing.status === "approved" && (
+                <RefundDialog
+                  cancellation={existing}
+                  order={order}
+                  trigger={<Button size="sm">Refund via Stripe</Button>}
+                />
+              )}
+              <Button asChild variant="outline" size="sm">
+                <Link href="/cancellations">View in review queue →</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : order.status === "cancelled" ? (

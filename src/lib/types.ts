@@ -30,6 +30,17 @@ export type Manufacturer =
   | "American Steel"
   | "SBS";
 
+export type StripePaymentStatus = "succeeded" | "pending" | "failed" | "refunded";
+
+export type StripePayment = {
+  id: string;
+  chargeId?: string;
+  amount: number;
+  status: StripePaymentStatus;
+  createdAt: string;
+  description?: string;
+};
+
 export type Order = {
   id: string;
   orderNumber: string;
@@ -45,6 +56,8 @@ export type Order = {
   status: OrderStatus;
   mfgStatus?: MfgStatus;
   depositPaid: number;
+  stripeCustomerId?: string;
+  stripePayments?: StripePayment[];
 };
 
 export type Cancellation = {
@@ -62,6 +75,9 @@ export type Cancellation = {
   decisionNotes?: string;
   refundMethod?: RefundMethod;
   refundReference?: string;
+  refundedAmount?: number;
+  refundedAt?: string;
+  refundedBy?: string;
 };
 
 // Pre-STM = anything before "Sent to Manufacturer" — sales-rep territory.

@@ -35,7 +35,21 @@ async function readState(): Promise<State> {
     await writeState(seed);
     return seed;
   }
-  return data.state as State;
+  const state = data.state as State;
+  // Backfill schema additions onto rows that were seeded before the field
+  // existed (Stripe fields, etc.) without dropping live cancellations.
+  const seedById = new Map(SEED_ORDERS.map((o) => [o.id, o]));
+  const enrichedOrders = state.orders.map((o) => {
+    if (o.stripePayments !== undefined) return o;
+    const seed = seedById.get(o.id);
+    if (!seed) return o;
+    return {
+      ...o,
+      stripeCustomerId: seed.stripeCustomerId,
+      stripePayments: seed.stripePayments,
+    };
+  });
+  return { ...state, orders: enrichedOrders };
 }
 
 async function writeState(state: State): Promise<void> {
