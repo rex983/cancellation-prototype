@@ -133,7 +133,7 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
                   <RefundDialog
                     cancellation={existing}
                     order={order}
-                    trigger={<Button size="sm">Refund via Stripe</Button>}
+                    trigger={<Button size="sm">Refund</Button>}
                   />
                 )}
               <Button asChild variant="outline" size="sm">

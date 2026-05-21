@@ -155,7 +155,7 @@ export function CancellationList({
                     <RefundDialog
                       cancellation={c}
                       order={order}
-                      trigger={<Button size="sm">Refund via Stripe</Button>}
+                      trigger={<Button size="sm">Refund</Button>}
                     />
                   )}
                 {canDecide && c.status === "pending_review" && (
@@ -179,17 +179,6 @@ export function CancellationList({
                       }
                     />
                   </>
-                )}
-                {canDecide && c.status === "approved" && (
-                  <DecisionDialog
-                    cancellationId={c.id}
-                    decision="complete"
-                    trigger={
-                      <Button size="sm" variant="outline">
-                        Mark Complete (manual)
-                      </Button>
-                    }
-                  />
                 )}
                 <Button asChild variant="ghost" size="sm" className="ml-auto">
                   <Link href={`/orders/${order.id}`}>

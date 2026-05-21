@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -14,9 +21,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { processStripeRefund } from "@/app/actions";
-import { formatCurrency } from "@/lib/format";
-import type { Cancellation, Order } from "@/lib/types";
+import { processRefund } from "@/app/actions";
+import {
+  REFUND_METHOD_LABEL,
+  REFUND_REFERENCE_PLACEHOLDER,
+  formatCurrency,
+} from "@/lib/format";
+import type { Cancellation, Order, RefundMethod } from "@/lib/types";
 
 type Props = {
   cancellation: Cancellation;
@@ -24,10 +35,21 @@ type Props = {
   trigger: React.ReactNode;
 };
 
+const METHODS: RefundMethod[] = [
+  "stripe",
+  "check",
+  "wire",
+  "ach",
+  "card_terminal",
+  "other",
+];
+
 export function RefundDialog({ cancellation, order, trigger }: Props) {
   const [open, setOpen] = useState(false);
+  const [method, setMethod] = useState<RefundMethod>("stripe");
   const [amount, setAmount] = useState(cancellation.refundAmount.toFixed(2));
   const [confirmAmount, setConfirmAmount] = useState("");
+  const [reference, setReference] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const successfulPayments = (order.stripePayments ?? []).filter(
@@ -40,16 +62,25 @@ export function RefundDialog({ cancellation, order, trigger }: Props) {
     confirmAmount.trim() !== "" &&
     Number(amount) === Number(confirmAmount);
 
+  const referenceRequired = method !== "stripe";
+  const referenceOk = !referenceRequired || reference.trim() !== "";
+  const canSubmit = amountsMatch && referenceOk;
+
   function handleSubmit(formData: FormData) {
-    if (!amountsMatch) {
-      toast.error("Amounts don't match");
+    if (!canSubmit) {
+      toast.error(
+        !amountsMatch ? "Amounts don't match" : "Reference is required",
+      );
       return;
     }
     formData.set("id", cancellation.id);
+    formData.set("refundMethod", method);
     startTransition(async () => {
       try {
-        await processStripeRefund(formData);
-        toast.success(`Refunded ${formatCurrency(Number(amount))}`);
+        await processRefund(formData);
+        toast.success(
+          `Refunded ${formatCurrency(Number(amount))} via ${REFUND_METHOD_LABEL[method]}`,
+        );
         setOpen(false);
       } catch (e) {
         toast.error(e instanceof Error ? e.message : "Refund failed");
@@ -62,10 +93,10 @@ export function RefundDialog({ cancellation, order, trigger }: Props) {
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Refund via Stripe</DialogTitle>
+          <DialogTitle>Issue refund</DialogTitle>
           <DialogDescription>
-            Order #{order.orderNumber} · {order.customerName}. Type the refund
-            amount twice to confirm.
+            Order #{order.orderNumber} · {order.customerName}. Pick a method,
+            then type the refund amount twice to confirm.
           </DialogDescription>
         </DialogHeader>
         <form action={handleSubmit} className="space-y-4">
@@ -92,7 +123,29 @@ export function RefundDialog({ cancellation, order, trigger }: Props) {
             </div>
           </div>
 
-          {successfulPayments.length > 0 && (
+          <div className="space-y-2">
+            <Label htmlFor="refundMethod">Refund method</Label>
+            <Select
+              value={method}
+              onValueChange={(v) => setMethod(v as RefundMethod)}
+            >
+              <SelectTrigger id="refundMethod">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {METHODS.map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {REFUND_METHOD_LABEL[m]}
+                    {m === "stripe" && (
+                      <span className="text-muted-foreground"> (default)</span>
+                    )}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {method === "stripe" && successfulPayments.length > 0 && (
             <div className="space-y-1.5 text-xs">
               <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
                 Payments to refund against
@@ -112,6 +165,23 @@ export function RefundDialog({ cancellation, order, trigger }: Props) {
               </ul>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label htmlFor="refundReference">
+              Reference{" "}
+              <span className="text-muted-foreground font-normal">
+                {referenceRequired ? "(required)" : "(optional)"}
+              </span>
+            </Label>
+            <Input
+              id="refundReference"
+              name="refundReference"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              placeholder={REFUND_REFERENCE_PLACEHOLDER[method]}
+              required={referenceRequired}
+            />
+          </div>
 
           <div className="space-y-2">
             <Label htmlFor="refundedBy">Reviewer name</Label>
@@ -152,9 +222,7 @@ export function RefundDialog({ cancellation, order, trigger }: Props) {
             </div>
           </div>
           {confirmAmount.trim() !== "" && !amountsMatch && (
-            <p className="text-xs text-rose-500">
-              Amounts don&apos;t match.
-            </p>
+            <p className="text-xs text-rose-500">Amounts don&apos;t match.</p>
           )}
 
           <DialogFooter>
@@ -166,10 +234,10 @@ export function RefundDialog({ cancellation, order, trigger }: Props) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending || !amountsMatch}>
+            <Button type="submit" disabled={isPending || !canSubmit}>
               {isPending
                 ? "Processing..."
-                : `Refund ${amount ? formatCurrency(Number(amount)) : ""}`}
+                : `Refund ${amount ? formatCurrency(Number(amount)) : ""} via ${REFUND_METHOD_LABEL[method]}`}
             </Button>
           </DialogFooter>
         </form>

@@ -157,11 +157,15 @@ export async function decideCancellation(formData: FormData) {
   revalidatePath("/bst");
 }
 
-export async function processStripeRefund(formData: FormData) {
+export async function processRefund(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   const amount = Number(formData.get("amount"));
   const confirmAmount = Number(formData.get("confirmAmount"));
   const refundedBy = String(formData.get("refundedBy") ?? "");
+  const refundMethodRaw = String(formData.get("refundMethod") ?? "stripe");
+  const refundReferenceInput = String(
+    formData.get("refundReference") ?? "",
+  ).trim();
 
   const role = await getRole();
   if (!canReview(role)) {
@@ -177,6 +181,22 @@ export async function processStripeRefund(formData: FormData) {
     throw new Error("Amounts don't match — re-enter the confirmation amount");
   }
 
+  const validMethods: RefundMethod[] = [
+    "stripe",
+    "check",
+    "wire",
+    "ach",
+    "card_terminal",
+    "other",
+  ];
+  if (!validMethods.includes(refundMethodRaw as RefundMethod)) {
+    throw new Error("Invalid refund method");
+  }
+  const refundMethod = refundMethodRaw as RefundMethod;
+  if (refundMethod !== "stripe" && !refundReferenceInput) {
+    throw new Error("Reference is required for non-Stripe refunds");
+  }
+
   const target = await getCancellation(id);
   if (!target) throw new Error("Cancellation not found");
   if (target.status === "completed") {
@@ -188,25 +208,30 @@ export async function processStripeRefund(formData: FormData) {
 
   const order = await getOrder(target.orderId);
   if (!order) throw new Error("Order not found");
-  const captured = (order.stripePayments ?? [])
-    .filter((p) => p.status === "succeeded")
-    .reduce((sum, p) => sum + p.amount, 0);
-  if (amount > captured) {
-    throw new Error(
-      `Refund (${amount.toFixed(2)}) exceeds captured Stripe payments (${captured.toFixed(2)})`,
-    );
+
+  if (refundMethod === "stripe") {
+    const captured = (order.stripePayments ?? [])
+      .filter((p) => p.status === "succeeded")
+      .reduce((sum, p) => sum + p.amount, 0);
+    if (amount > captured) {
+      throw new Error(
+        `Refund (${amount.toFixed(2)}) exceeds captured Stripe payments (${captured.toFixed(2)})`,
+      );
+    }
   }
 
-  const stripeRefundId = `re_3M${order.orderNumber}${Math.random()
-    .toString(36)
-    .slice(2, 10)}`;
+  const refundReference =
+    refundMethod === "stripe"
+      ? refundReferenceInput ||
+        `re_3M${order.orderNumber}${Math.random().toString(36).slice(2, 10)}`
+      : refundReferenceInput;
   const now = new Date().toISOString();
 
   const wasPending = target.status === "pending_review";
   await updateCancellation(id, {
     status: "completed",
-    refundMethod: "stripe",
-    refundReference: stripeRefundId,
+    refundMethod,
+    refundReference,
     refundedAmount: amount,
     refundedAt: now,
     refundedBy,

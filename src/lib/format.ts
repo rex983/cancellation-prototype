@@ -120,7 +120,17 @@ export const CANCEL_TYPE_LABEL: Record<CancellationType, string> = {
 export const REFUND_METHOD_LABEL: Record<RefundMethod, string> = {
   stripe: "Stripe",
   check: "Check",
-  ach: "ACH / Wire",
+  wire: "Wire transfer",
+  ach: "ACH",
   card_terminal: "Card terminal",
   other: "Other",
+};
+
+export const REFUND_REFERENCE_PLACEHOLDER: Record<RefundMethod, string> = {
+  stripe: "Auto-generated (re_…)",
+  check: "Check number",
+  wire: "Wire confirmation #",
+  ach: "ACH trace / batch ID",
+  card_terminal: "Terminal receipt #",
+  other: "Reference / note",
 };

@@ -14,7 +14,13 @@ export type MfgStatus = "acknowledged" | "awaiting_reply" | "has_kickback";
 
 export type CancellationType = "pre_stm" | "post_stm" | "window_72h";
 
-export type RefundMethod = "stripe" | "check" | "ach" | "card_terminal" | "other";
+export type RefundMethod =
+  | "stripe"
+  | "check"
+  | "wire"
+  | "ach"
+  | "card_terminal"
+  | "other";
 
 export type CancellationStatus =
   | "pending_review"
