@@ -143,7 +143,7 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
                     <RefundDialog
                       cancellation={existing}
                       order={order}
-                      trigger={<Button size="sm">Refund</Button>}
+                      trigger={<Button size="sm">Full Refund</Button>}
                     />
                     {existing.type === "post_stm" && (
                       <COFDialog

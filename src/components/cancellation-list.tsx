@@ -9,7 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { StatusBadge } from "@/components/status-badge";
-import { DecisionDialog } from "@/components/decision-dialog";
 import { RefundDialog } from "@/components/refund-dialog";
 import { FormReturnedDialog } from "@/components/form-returned-dialog";
 import { COFDialog } from "@/components/cof-dialog";
@@ -165,7 +164,7 @@ export function CancellationList({
                       <RefundDialog
                         cancellation={c}
                         order={order}
-                        trigger={<Button size="sm">Refund</Button>}
+                        trigger={<Button size="sm">Full Refund</Button>}
                       />
                       {c.type === "post_stm" && (
                         <COFDialog
@@ -180,17 +179,6 @@ export function CancellationList({
                       )}
                     </>
                   )}
-                {canDecide && c.status === "pending_review" && (
-                  <DecisionDialog
-                    cancellationId={c.id}
-                    decision="deny"
-                    trigger={
-                      <Button size="sm" variant="outline">
-                        Deny
-                      </Button>
-                    }
-                  />
-                )}
                 <Button asChild variant="ghost" size="sm" className="ml-auto">
                   <Link href={`/orders/${order.id}`}>
                     View order details

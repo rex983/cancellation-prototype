@@ -103,61 +103,6 @@ export async function submitCancellation(formData: FormData) {
   redirect("/cancellations");
 }
 
-export async function decideCancellation(formData: FormData) {
-  const id = String(formData.get("id") ?? "");
-  const decision = String(formData.get("decision") ?? "");
-  const decisionNotes = String(formData.get("decisionNotes") ?? "");
-  const decidedBy = String(formData.get("decidedBy") ?? "Reviewer");
-
-  const role = await getRole();
-  if (!canReview(role)) {
-    throw new Error("Your role can't review cancellations");
-  }
-
-  const target = await getCancellation(id);
-  if (!target) throw new Error("Cancellation not found");
-
-  if (decision === "approve") {
-    await updateCancellation(id, {
-      status: "approved",
-      decidedAt: new Date().toISOString(),
-      decidedBy,
-      decisionNotes,
-    });
-    await updateOrderStatus(target.orderId, "cancelled");
-  } else if (decision === "deny") {
-    await updateCancellation(id, {
-      status: "denied",
-      decidedAt: new Date().toISOString(),
-      decidedBy,
-      decisionNotes,
-    });
-  } else if (decision === "complete") {
-    const refundMethodRaw = String(formData.get("refundMethod") ?? "");
-    const refundReference = String(formData.get("refundReference") ?? "");
-    const validMethods: RefundMethod[] = [
-      "stripe",
-      "check",
-      "ach",
-      "card_terminal",
-      "other",
-    ];
-    const refundMethod = validMethods.includes(refundMethodRaw as RefundMethod)
-      ? (refundMethodRaw as RefundMethod)
-      : undefined;
-    await updateCancellation(id, {
-      status: "completed",
-      decisionNotes: decisionNotes || target.decisionNotes,
-      refundMethod: refundMethod ?? target.refundMethod,
-      refundReference: refundReference || target.refundReference,
-    });
-  }
-
-  revalidatePath("/cancellations");
-  revalidatePath("/sales");
-  revalidatePath("/bst");
-}
-
 export async function sendCancellationForm(formData: FormData) {
   const orderId = String(formData.get("orderId") ?? "");
   const requestedBy = String(formData.get("requestedBy") ?? "");
