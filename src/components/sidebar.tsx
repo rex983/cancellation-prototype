@@ -7,7 +7,6 @@ import {
   FileText,
   Truck,
   Ban,
-  Wallet,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -56,12 +55,6 @@ export function Sidebar({
       icon: Ban,
       count: pendingCancellations || undefined,
       show: canReview,
-    },
-    {
-      href: "/cof",
-      label: "Credit on File",
-      icon: Wallet,
-      show: canSeeBst,
     },
   ];
 

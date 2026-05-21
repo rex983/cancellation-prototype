@@ -7,6 +7,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Card,
   CardContent,
   CardDescription,
@@ -15,7 +22,7 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { sendCancellationForm } from "@/app/actions";
-import { FORMSTACK_CANCELLATION_URL } from "@/lib/types";
+import { FORMSTACK_CANCELLATION_URL, POST_STM_REASONS } from "@/lib/types";
 import type { Order } from "@/lib/types";
 
 function buildMailto(order: Order): string {
@@ -39,6 +46,7 @@ function buildMailto(order: Order): string {
 
 export function PostStmForm({ order }: { order: Order }) {
   const [requestedBy, setRequestedBy] = useState("");
+  const [reason, setReason] = useState("");
   const [notes, setNotes] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -47,11 +55,16 @@ export function PostStmForm({ order }: { order: Order }) {
       toast.error("Enter your name first");
       return;
     }
+    if (!reason) {
+      toast.error("Pick a cancellation reason");
+      return;
+    }
     const mailto = buildMailto(order);
     window.open(mailto, "_blank");
     const formData = new FormData();
     formData.set("orderId", order.id);
     formData.set("requestedBy", requestedBy);
+    formData.set("reason", reason);
     formData.set("notes", notes);
     startTransition(async () => {
       try {
@@ -85,13 +98,28 @@ export function PostStmForm({ order }: { order: Order }) {
             />
           </div>
           <div className="space-y-2">
+            <Label htmlFor="reason">Cancellation reason</Label>
+            <Select value={reason} onValueChange={setReason}>
+              <SelectTrigger id="reason">
+                <SelectValue placeholder="Choose a reason..." />
+              </SelectTrigger>
+              <SelectContent>
+                {POST_STM_REASONS.map((r) => (
+                  <SelectItem key={r} value={r}>
+                    {r}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="notes">Internal notes</Label>
             <Textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={4}
-              placeholder="Why is the customer cancelling? Any conversation history, mfg reference numbers, etc."
+              placeholder="Conversation history, manufacturer reference numbers, etc."
             />
           </div>
           <div className="rounded-md border bg-muted/40 p-3 text-xs space-y-1">

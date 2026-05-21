@@ -161,6 +161,7 @@ export async function decideCancellation(formData: FormData) {
 export async function sendCancellationForm(formData: FormData) {
   const orderId = String(formData.get("orderId") ?? "");
   const requestedBy = String(formData.get("requestedBy") ?? "");
+  const reason = String(formData.get("reason") ?? "");
   const notes = String(formData.get("notes") ?? "");
 
   const role = await getRole();
@@ -169,6 +170,9 @@ export async function sendCancellationForm(formData: FormData) {
   }
   if (!requestedBy.trim()) {
     throw new Error("BST member name is required");
+  }
+  if (!reason.trim()) {
+    throw new Error("Cancellation reason is required");
   }
 
   const order = await getOrder(orderId);
@@ -190,7 +194,7 @@ export async function sendCancellationForm(formData: FormData) {
     orderId,
     type: "post_stm",
     status: "awaiting_customer",
-    reason: "Customer cancellation request",
+    reason,
     notes,
     requestedBy,
     requestedAt: now,

@@ -1,7 +1,8 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CancellationList } from "@/components/cancellation-list";
+import { CreditsList } from "@/components/credits-list";
 import { AccessDenied } from "@/components/access-denied";
-import { listCancellations, listOrders } from "@/lib/store";
+import { listCancellations, listCredits, listOrders } from "@/lib/store";
 import { canReview } from "@/lib/roles";
 import { getRole } from "@/lib/roles.server";
 
@@ -9,9 +10,10 @@ export default async function CancellationsPage() {
   const role = await getRole();
   if (!canReview(role)) return <AccessDenied role={role} />;
 
-  const [all, allOrders] = await Promise.all([
+  const [all, allOrders, credits] = await Promise.all([
     listCancellations(),
     listOrders(),
+    listCredits(),
   ]);
   const orders = new Map(allOrders.map((o) => [o.id, o]));
 
@@ -33,6 +35,7 @@ export default async function CancellationsPage() {
           <TabsTrigger value="all">All ({all.length})</TabsTrigger>
           <TabsTrigger value="pre">Pre-STM ({preStm.length})</TabsTrigger>
           <TabsTrigger value="post">Post-STM ({postStm.length})</TabsTrigger>
+          <TabsTrigger value="cof">Credit on File ({credits.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="all" className="mt-4">
           <CancellationList
@@ -57,6 +60,9 @@ export default async function CancellationsPage() {
             empty="No post-STM cancellation requests yet."
             canDecide
           />
+        </TabsContent>
+        <TabsContent value="cof" className="mt-4">
+          <CreditsList credits={credits} />
         </TabsContent>
       </Tabs>
     </div>

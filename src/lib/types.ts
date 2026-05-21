@@ -124,13 +124,9 @@ export const PRE_STM_STATUSES: OrderStatus[] = [
 export const POST_STM_STATUSES: OrderStatus[] = ["stm"];
 
 export const POST_STM_REASONS = [
-  "Customer cancellation request",
-  "Manufacturing delay / customer unwilling to wait",
-  "Site issue (unbuildable / access problem)",
-  "Engineering / spec change required",
-  "Customer financial hardship",
-  "Damaged in transit (re-order needed)",
-  "Manufacturer unable to fulfill",
+  "Manufacturer denial",
+  "Permit denial",
+  "Customer change of heart",
   "Other",
 ];
 
