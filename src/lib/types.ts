@@ -12,7 +12,9 @@ export type PaymentStatus = "unpaid" | "partial" | "paid" | "overpaid";
 
 export type MfgStatus = "acknowledged" | "awaiting_reply" | "has_kickback";
 
-export type CancellationType = "pre_stm" | "post_stm";
+export type CancellationType = "pre_stm" | "post_stm" | "window_72h";
+
+export type RefundMethod = "stripe" | "check" | "ach" | "card_terminal" | "other";
 
 export type CancellationStatus =
   | "pending_review"
@@ -58,6 +60,8 @@ export type Cancellation = {
   decidedAt?: string;
   decidedBy?: string;
   decisionNotes?: string;
+  refundMethod?: RefundMethod;
+  refundReference?: string;
 };
 
 // Pre-STM = anything before "Sent to Manufacturer" — sales-rep territory.
@@ -92,4 +96,9 @@ export const POST_STM_REASONS = [
   "Damaged in transit (re-order needed)",
   "Manufacturer unable to fulfill",
   "Other",
+];
+
+export const WINDOW_72H_REASONS = [
+  "72 hour cancellation",
+  "No contract signed",
 ];

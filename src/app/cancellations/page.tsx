@@ -14,6 +14,7 @@ export default async function CancellationsPage() {
 
   const preStm = all.filter((c) => c.type === "pre_stm");
   const postStm = all.filter((c) => c.type === "post_stm");
+  const window72h = all.filter((c) => c.type === "window_72h");
 
   return (
     <div className="space-y-5 max-w-5xl">
@@ -28,6 +29,7 @@ export default async function CancellationsPage() {
           <TabsTrigger value="all">All ({all.length})</TabsTrigger>
           <TabsTrigger value="pre">Pre-STM ({preStm.length})</TabsTrigger>
           <TabsTrigger value="post">Post-STM ({postStm.length})</TabsTrigger>
+          <TabsTrigger value="window">72-Hour ({window72h.length})</TabsTrigger>
         </TabsList>
         <TabsContent value="all" className="mt-4">
           <CancellationList
@@ -50,6 +52,14 @@ export default async function CancellationsPage() {
             cancellations={postStm}
             orders={orders}
             empty="No post-STM cancellation requests yet."
+            canDecide
+          />
+        </TabsContent>
+        <TabsContent value="window" className="mt-4">
+          <CancellationList
+            cancellations={window72h}
+            orders={orders}
+            empty="No 72-hour cancellation requests yet."
             canDecide
           />
         </TabsContent>

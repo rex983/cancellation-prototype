@@ -15,6 +15,7 @@ import {
   PRE_STM_STATUSES,
   POST_STM_STATUSES,
   type CancellationType,
+  type RefundMethod,
 } from "@/lib/types";
 import {
   ROLES,
@@ -55,9 +56,15 @@ export async function submitCancellation(formData: FormData) {
   if (type === "post_stm" && !canRequestPost(role)) {
     throw new Error("Your role can't submit a post-STM cancellation");
   }
+  if (type === "window_72h" && !canRequestPost(role)) {
+    throw new Error("Only BST can submit a 72-hour cancellation");
+  }
 
   const order = getOrder(orderId);
   if (!order) throw new Error("Order not found");
+  if (order.status === "cancelled") {
+    throw new Error("Order is already cancelled");
+  }
   if (getCancellationForOrder(orderId)) {
     throw new Error("Active cancellation already exists for this order");
   }
@@ -123,9 +130,23 @@ export async function decideCancellation(formData: FormData) {
       decisionNotes,
     });
   } else if (decision === "complete") {
+    const refundMethodRaw = String(formData.get("refundMethod") ?? "");
+    const refundReference = String(formData.get("refundReference") ?? "");
+    const validMethods: RefundMethod[] = [
+      "stripe",
+      "check",
+      "ach",
+      "card_terminal",
+      "other",
+    ];
+    const refundMethod = validMethods.includes(refundMethodRaw as RefundMethod)
+      ? (refundMethodRaw as RefundMethod)
+      : undefined;
     updateCancellation(id, {
       status: "completed",
       decisionNotes: decisionNotes || target.decisionNotes,
+      refundMethod: refundMethod ?? target.refundMethod,
+      refundReference: refundReference || target.refundReference,
     });
   }
 

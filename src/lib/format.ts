@@ -4,6 +4,7 @@ import type {
   MfgStatus,
   CancellationStatus,
   CancellationType,
+  RefundMethod,
 } from "./types";
 
 export function formatCurrency(amount: number): string {
@@ -113,4 +114,13 @@ export const CANCEL_STATUS_TONE: Record<CancellationStatus, BadgeTone> = {
 export const CANCEL_TYPE_LABEL: Record<CancellationType, string> = {
   pre_stm: "Pre-STM (Sales)",
   post_stm: "Post-STM (BST)",
+  window_72h: "72-Hour (BST)",
+};
+
+export const REFUND_METHOD_LABEL: Record<RefundMethod, string> = {
+  stripe: "Stripe",
+  check: "Check",
+  ach: "ACH / Wire",
+  card_terminal: "Card terminal",
+  other: "Other",
 };

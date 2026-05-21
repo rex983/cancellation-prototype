@@ -12,6 +12,8 @@ import { DecisionDialog } from "@/components/decision-dialog";
 import {
   CANCEL_STATUS_LABEL,
   CANCEL_STATUS_TONE,
+  CANCEL_TYPE_LABEL,
+  REFUND_METHOD_LABEL,
   formatCurrency,
   formatDate,
 } from "@/lib/format";
@@ -69,10 +71,22 @@ export function CancellationList({
               </div>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <Field label="Type" value={CANCEL_TYPE_LABEL[c.type]} />
                 <Field label="Reason" value={c.reason} />
                 <Field label="Refund" value={formatCurrency(c.refundAmount)} />
               </div>
+              {c.refundMethod && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <Field
+                    label="Refund method"
+                    value={REFUND_METHOD_LABEL[c.refundMethod]}
+                  />
+                  {c.refundReference && (
+                    <Field label="Reference" value={c.refundReference} />
+                  )}
+                </div>
+              )}
               {c.notes && (
                 <div>
                   <div className="text-[10px] text-muted-foreground uppercase tracking-wider">
