@@ -116,6 +116,24 @@ export async function getCancellationForOrder(
   );
 }
 
+export async function listCancellationsForOrder(
+  orderId: string,
+): Promise<Cancellation[]> {
+  const state = await readState();
+  return state.cancellations
+    .filter((c) => c.orderId === orderId)
+    .sort((a, b) => a.requestedAt.localeCompare(b.requestedAt));
+}
+
+export async function listCreditsForOrder(
+  orderId: string,
+): Promise<CreditOnFile[]> {
+  const state = await readState();
+  return state.credits
+    .filter((c) => c.orderId === orderId)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
 export async function createCancellation(
   c: Cancellation,
 ): Promise<Cancellation> {

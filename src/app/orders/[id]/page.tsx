@@ -9,14 +9,21 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrderSummary } from "@/components/order-summary";
 import { OrderStripeCard } from "@/components/order-stripe-card";
+import { OrderHistory } from "@/components/order-history";
 import { PostStmForm } from "@/components/post-stm-form";
 import { WindowForm } from "@/components/window-form";
 import { RefundDialog } from "@/components/refund-dialog";
 import { FormReturnedDialog } from "@/components/form-returned-dialog";
 import { COFDialog } from "@/components/cof-dialog";
-import { getCancellationForOrder, getOrder } from "@/lib/store";
+import {
+  getCancellationForOrder,
+  getOrder,
+  listCancellationsForOrder,
+  listCreditsForOrder,
+} from "@/lib/store";
 import {
   PRE_STM_STATUSES,
   POST_STM_STATUSES,
@@ -46,7 +53,11 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
   if (!order) notFound();
 
   const role = await getRole();
-  const existing = await getCancellationForOrder(order.id);
+  const [existing, history, credits] = await Promise.all([
+    getCancellationForOrder(order.id),
+    listCancellationsForOrder(order.id),
+    listCreditsForOrder(order.id),
+  ]);
   const isPre = PRE_STM_STATUSES.includes(order.status);
   const isPost = POST_STM_STATUSES.includes(order.status);
   const allowedPre = canRequestPre(role);
@@ -65,9 +76,15 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
         </Link>
       </div>
       <OrderSummary order={order} />
-      <OrderStripeCard order={order} />
 
-      {existing ? (
+      <Tabs defaultValue="details" className="w-full">
+        <TabsList>
+          <TabsTrigger value="details">Details</TabsTrigger>
+          <TabsTrigger value="history">History</TabsTrigger>
+        </TabsList>
+        <TabsContent value="details" className="mt-4 space-y-6">
+          <OrderStripeCard order={order} />
+          {existing ? (
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between gap-3">
@@ -201,6 +218,15 @@ export default async function OrderPage(props: PageProps<"/orders/[id]">) {
           </CardHeader>
         </Card>
       )}
+        </TabsContent>
+        <TabsContent value="history" className="mt-4">
+          <OrderHistory
+            order={order}
+            cancellations={history}
+            credits={credits}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

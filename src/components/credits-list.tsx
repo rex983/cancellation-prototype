@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Wallet } from "lucide-react";
+import { Wallet } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -35,61 +35,50 @@ export function CreditsList({ credits }: Props) {
       ) : (
         <div className="space-y-3">
           {credits.map((c) => (
-            <Card key={c.id} className="bg-card/40">
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-base">
-                      {c.customerName}{" "}
-                      <span className="text-muted-foreground font-normal">
-                        — {c.customerEmail}
-                      </span>
-                    </CardTitle>
-                    <CardDescription>
-                      From order{" "}
-                      <Link
-                        href={`/orders/${c.orderId}`}
-                        className="hover:underline"
-                      >
-                        #{c.orderNumber}
-                      </Link>{" "}
-                      &middot; Created {formatDate(c.createdAt)} by {c.createdBy}
-                    </CardDescription>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      {c.status === "active"
-                        ? "Available"
-                        : c.status === "applied"
-                          ? "Applied"
-                          : "Expired"}
+            <Link
+              key={c.id}
+              href={`/orders/${c.orderId}`}
+              className="block group"
+            >
+              <Card className="bg-card/40 transition group-hover:border-[var(--brand)]/60 group-hover:bg-card/60 cursor-pointer">
+                <CardHeader>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <CardTitle className="text-base group-hover:underline">
+                        {c.customerName}{" "}
+                        <span className="text-muted-foreground font-normal">
+                          — {c.customerEmail}
+                        </span>
+                      </CardTitle>
+                      <CardDescription>
+                        From order #{c.orderNumber} &middot; Created{" "}
+                        {formatDate(c.createdAt)} by {c.createdBy}
+                      </CardDescription>
                     </div>
-                    <div className="font-bold text-lg tabular-nums">
-                      {formatCurrency(c.amount)}
+                    <div className="text-right">
+                      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {c.status === "active"
+                          ? "Available"
+                          : c.status === "applied"
+                            ? "Applied"
+                            : "Expired"}
+                      </div>
+                      <div className="font-bold text-lg tabular-nums">
+                        {formatCurrency(c.amount)}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </CardHeader>
-              {c.notes && (
-                <CardContent className="text-sm space-y-2">
-                  <div>
+                </CardHeader>
+                {c.notes && (
+                  <CardContent className="text-sm">
                     <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
                       Notes
                     </div>
                     <div>{c.notes}</div>
-                  </div>
-                  <div className="flex justify-end">
-                    <Link
-                      href={`/orders/${c.orderId}`}
-                      className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center"
-                    >
-                      View order details
-                      <ArrowRight className="ml-1 h-3 w-3" />
-                    </Link>
-                  </div>
-                </CardContent>
-              )}
-            </Card>
+                  </CardContent>
+                )}
+              </Card>
+            </Link>
           ))}
         </div>
       )}
