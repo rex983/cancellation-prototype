@@ -1,10 +1,17 @@
 import { OrderTable } from "@/components/order-table";
 import { AccessDenied } from "@/components/access-denied";
 import { StatusTabs, type StatusTab } from "@/components/status-tabs";
+import { SearchBar } from "@/components/search-bar";
 import { listOrders } from "@/lib/store";
 import { PRE_STM_STATUSES, type OrderStatus } from "@/lib/types";
 import { canSeeSales } from "@/lib/roles";
 import { getRole } from "@/lib/roles.server";
+
+function matches(o: { orderNumber: string; customerName: string; customerEmail: string; salesRep: string; manufacturer: string }, q: string): boolean {
+  const needle = q.toLowerCase();
+  return [o.orderNumber, o.customerName, o.customerEmail, o.salesRep, o.manufacturer]
+    .some((v) => v.toLowerCase().includes(needle));
+}
 
 const PRE_TABS: { key: OrderStatus | "all"; label: string }[] = [
   { key: "all", label: "All Pre-STM" },
@@ -21,12 +28,14 @@ export default async function SalesPage(props: PageProps<"/sales">) {
 
   const sp = await props.searchParams;
   const filter = (Array.isArray(sp.status) ? sp.status[0] : sp.status) ?? "all";
+  const q = ((Array.isArray(sp.q) ? sp.q[0] : sp.q) ?? "").trim();
 
   const allPre = (await listOrders()).filter((o) =>
     PRE_STM_STATUSES.includes(o.status),
   );
-  const filtered =
+  const byStatus =
     filter === "all" ? allPre : allPre.filter((o) => o.status === filter);
+  const filtered = q ? byStatus.filter((o) => matches(o, q)) : byStatus;
 
   const tabs: StatusTab[] = PRE_TABS.map((t) => ({
     label: t.label,
@@ -47,6 +56,7 @@ export default async function SalesPage(props: PageProps<"/sales">) {
           cancellation
         </p>
       </div>
+      <SearchBar placeholder="Search order #, customer, sales rep, manufacturer..." />
       <StatusTabs tabs={tabs} />
       <OrderTable
         orders={filtered}

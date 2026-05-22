@@ -1,10 +1,17 @@
 import { OrderTable } from "@/components/order-table";
 import { AccessDenied } from "@/components/access-denied";
 import { StatusTabs, type StatusTab } from "@/components/status-tabs";
+import { SearchBar } from "@/components/search-bar";
 import { listOrders } from "@/lib/store";
 import { POST_STM_STATUSES } from "@/lib/types";
 import { canSeeBst } from "@/lib/roles";
 import { getRole } from "@/lib/roles.server";
+
+function matches(o: { orderNumber: string; customerName: string; customerEmail: string; salesRep: string; manufacturer: string }, q: string): boolean {
+  const needle = q.toLowerCase();
+  return [o.orderNumber, o.customerName, o.customerEmail, o.salesRep, o.manufacturer]
+    .some((v) => v.toLowerCase().includes(needle));
+}
 
 export default async function BstPage(props: PageProps<"/bst">) {
   const role = await getRole();
@@ -12,13 +19,15 @@ export default async function BstPage(props: PageProps<"/bst">) {
 
   const sp = await props.searchParams;
   const mfgFilter = Array.isArray(sp.mfg) ? sp.mfg[0] : sp.mfg;
+  const q = ((Array.isArray(sp.q) ? sp.q[0] : sp.q) ?? "").trim();
 
   const allPost = (await listOrders()).filter((o) =>
     POST_STM_STATUSES.includes(o.status),
   );
-  const filtered = mfgFilter
+  const byMfg = mfgFilter
     ? allPost.filter((o) => o.mfgStatus === mfgFilter)
     : allPost;
+  const filtered = q ? byMfg.filter((o) => matches(o, q)) : byMfg;
 
   const counts = {
     all: allPost.length,
@@ -57,6 +66,7 @@ export default async function BstPage(props: PageProps<"/bst">) {
           Showing {filtered.length} of {allPost.length} orders with the manufacturer
         </p>
       </div>
+      <SearchBar placeholder="Search order #, customer, sales rep, manufacturer..." />
       <StatusTabs tabs={tabs} />
       <OrderTable
         orders={filtered}
